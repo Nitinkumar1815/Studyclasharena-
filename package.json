@@ -14,7 +14,7 @@
     "recharts": "^3.5.1",
     "react-dom": "^19.2.1",
     "@google/genai": "^1.31.0",
-    "@supabase/supabase-js": "2.39.7"
+    "@supabase/supabase-js": "^2.39.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
