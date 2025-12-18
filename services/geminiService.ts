@@ -87,15 +87,15 @@ export const generateGitaGuidance = async (userState: string): Promise<string> =
       Output Rules:
       1. Start with a relevant short **Sanskrit Shloka** from Bhagavad Gita.
       2. Follow with a powerful, emotional motivation in **Hindi**.
-      3. Address the user as "Parth" (à¤ªà¤¾à¤°à¥à¤¥) or "Kounteya" (à¤à¥à¤¨à¥à¤¤à¥à¤¯).
+      3. Address the user as "Parth" (Ã Â¤ÂªÃ Â¤Â¾Ã Â¤Â°Ã Â¥ÂÃ Â¤Â¥) or "Kounteya" (Ã Â¤ÂÃ Â¥ÂÃ Â¤Â¨Ã Â¥ÂÃ Â¤Â¤Ã Â¥ÂÃ Â¤Â¯).
       4. Keep it concise (max 3 sentences).
       
-      Example tone: "à¤¹à¥ à¤ªà¤¾à¤°à¥à¤¥! à¤®à¤¨ à¤à¥ à¤¦à¥à¤°à¥à¤¬à¤²à¤¤à¤¾ à¤à¥ à¤¤à¥à¤¯à¤¾à¤à¥ à¤à¤° à¤¯à¥à¤¦à¥à¤§ (à¤ªà¤¢à¤¼à¤¾à¤) à¤à¥ à¤²à¤¿à¤ à¤à¤¡à¤¼à¥ à¤¹à¥ à¤à¤¾à¤!"
+      Example tone: "Ã Â¤Â¹Ã Â¥Â Ã Â¤ÂªÃ Â¤Â¾Ã Â¤Â°Ã Â¥ÂÃ Â¤Â¥! Ã Â¤Â®Ã Â¤Â¨ Ã Â¤ÂÃ Â¥Â Ã Â¤Â¦Ã Â¥ÂÃ Â¤Â°Ã Â¥ÂÃ Â¤Â¬Ã Â¤Â²Ã Â¤Â¤Ã Â¤Â¾ Ã Â¤ÂÃ Â¥Â Ã Â¤Â¤Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â¾Ã Â¤ÂÃ Â¥Â Ã Â¤ÂÃ Â¤Â° Ã Â¤Â¯Ã Â¥ÂÃ Â¤Â¦Ã Â¥ÂÃ Â¤Â§ (Ã Â¤ÂªÃ Â¤Â¢Ã Â¤Â¼Ã Â¤Â¾Ã Â¤Â) Ã Â¤ÂÃ Â¥Â Ã Â¤Â²Ã Â¤Â¿Ã Â¤Â Ã Â¤ÂÃ Â¤Â¡Ã Â¤Â¼Ã Â¥Â Ã Â¤Â¹Ã Â¥Â Ã Â¤ÂÃ Â¤Â¾Ã Â¤Â!"
       `,
     });
-    return response.text || "à¤¹à¥ à¤ªà¤¾à¤°à¥à¤¥! à¤à¥à¤²à¥à¤¬à¥à¤¯à¤ à¤®à¤¾ à¤¸à¥à¤® à¤à¤®à¤ à¤ªà¤¾à¤°à¥à¤¥ à¤¨à¥à¤¤à¤¤à¥à¤¤à¥à¤µà¤¯à¥à¤¯à¥à¤ªà¤ªà¤¦à¥à¤¯à¤¤à¥à¥¤ à¤¹à¥à¤¦à¤¯à¤¦à¥à¤°à¥à¤¬à¤²à¥à¤¯à¤ à¤¤à¥à¤¯à¤à¥à¤¤à¥à¤µà¥à¤¤à¥à¤¤à¤¿à¤·à¥à¤  à¤ªà¤°à¤¨à¥à¤¤à¤ªà¥¤";
+    return response.text || "Ã Â¤Â¹Ã Â¥Â Ã Â¤ÂªÃ Â¤Â¾Ã Â¤Â°Ã Â¥ÂÃ Â¤Â¥! Ã Â¤ÂÃ Â¥ÂÃ Â¤Â²Ã Â¥ÂÃ Â¤Â¬Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â Ã Â¤Â®Ã Â¤Â¾ Ã Â¤Â¸Ã Â¥ÂÃ Â¤Â® Ã Â¤ÂÃ Â¤Â®Ã Â¤Â Ã Â¤ÂªÃ Â¤Â¾Ã Â¤Â°Ã Â¥ÂÃ Â¤Â¥ Ã Â¤Â¨Ã Â¥ÂÃ Â¤Â¤Ã Â¤Â¤Ã Â¥ÂÃ Â¤Â¤Ã Â¥ÂÃ Â¤ÂµÃ Â¤Â¯Ã Â¥ÂÃ Â¤Â¯Ã Â¥ÂÃ Â¤ÂªÃ Â¤ÂªÃ Â¤Â¦Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â¤Ã Â¥ÂÃ Â¥Â¤ Ã Â¤Â¹Ã Â¥ÂÃ Â¤Â¦Ã Â¤Â¯Ã Â¤Â¦Ã Â¥ÂÃ Â¤Â°Ã Â¥ÂÃ Â¤Â¬Ã Â¤Â²Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â Ã Â¤Â¤Ã Â¥ÂÃ Â¤Â¯Ã Â¤ÂÃ Â¥ÂÃ Â¤Â¤Ã Â¥ÂÃ Â¤ÂµÃ Â¥ÂÃ Â¤Â¤Ã Â¥ÂÃ Â¤Â¤Ã Â¤Â¿Ã Â¤Â·Ã Â¥ÂÃ Â¤Â  Ã Â¤ÂªÃ Â¤Â°Ã Â¤Â¨Ã Â¥ÂÃ Â¤Â¤Ã Â¤ÂªÃ Â¥Â¤";
   } catch (error) {
-    return "à¤¹à¥ à¤ªà¤¾à¤°à¥à¤¥, à¤à¤¬ à¤¤à¥à¤®à¥à¤¹à¤¾à¤°à¤¾ à¤®à¤¨ à¤®à¥à¤¹ à¤°à¥à¤ªà¥ à¤¦à¤²à¤¦à¤² à¤à¥ à¤ªà¤¾à¤° à¤à¤° à¤à¤¾à¤à¤à¤¾, à¤¤à¤¬ à¤¤à¥à¤® à¤à¤°à¥à¤® à¤à¥ à¤¬à¤à¤§à¤¨ à¤¸à¥ à¤®à¥à¤à¥à¤¤ à¤¹à¥ à¤à¤¾à¤à¤à¥à¥¤ à¤à¤ªà¤¨à¤¾ à¤§à¥à¤¯à¤¾à¤¨ à¤à¥à¤à¤¦à¥à¤°à¤¿à¤¤ à¤à¤°à¥à¥¤";
+    return "Ã Â¤Â¹Ã Â¥Â Ã Â¤ÂªÃ Â¤Â¾Ã Â¤Â°Ã Â¥ÂÃ Â¤Â¥, Ã Â¤ÂÃ Â¤Â¬ Ã Â¤Â¤Ã Â¥ÂÃ Â¤Â®Ã Â¥ÂÃ Â¤Â¹Ã Â¤Â¾Ã Â¤Â°Ã Â¤Â¾ Ã Â¤Â®Ã Â¤Â¨ Ã Â¤Â®Ã Â¥ÂÃ Â¤Â¹ Ã Â¤Â°Ã Â¥ÂÃ Â¤ÂªÃ Â¥Â Ã Â¤Â¦Ã Â¤Â²Ã Â¤Â¦Ã Â¤Â² Ã Â¤ÂÃ Â¥Â Ã Â¤ÂªÃ Â¤Â¾Ã Â¤Â° Ã Â¤ÂÃ Â¤Â° Ã Â¤ÂÃ Â¤Â¾Ã Â¤ÂÃ Â¤ÂÃ Â¤Â¾, Ã Â¤Â¤Ã Â¤Â¬ Ã Â¤Â¤Ã Â¥ÂÃ Â¤Â® Ã Â¤ÂÃ Â¤Â°Ã Â¥ÂÃ Â¤Â® Ã Â¤ÂÃ Â¥Â Ã Â¤Â¬Ã Â¤ÂÃ Â¤Â§Ã Â¤Â¨ Ã Â¤Â¸Ã Â¥Â Ã Â¤Â®Ã Â¥ÂÃ Â¤ÂÃ Â¥ÂÃ Â¤Â¤ Ã Â¤Â¹Ã Â¥Â Ã Â¤ÂÃ Â¤Â¾Ã Â¤ÂÃ Â¤ÂÃ Â¥ÂÃ Â¥Â¤ Ã Â¤ÂÃ Â¤ÂªÃ Â¤Â¨Ã Â¤Â¾ Ã Â¤Â§Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â¾Ã Â¤Â¨ Ã Â¤ÂÃ Â¥ÂÃ Â¤ÂÃ Â¤Â¦Ã Â¥ÂÃ Â¤Â°Ã Â¤Â¿Ã Â¤Â¤ Ã Â¤ÂÃ Â¤Â°Ã Â¥ÂÃ Â¥Â¤";
   }
 };
 
@@ -149,20 +149,20 @@ export interface RivalInput {
 export const generateRivalAnalysis = async (data: RivalInput): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' });
   const systemInstruction = `
-    You are an AI feature inside the student app "StudyClashArena" called "SILENT RIVAL MODEâ¢".
+    You are an AI feature inside the student app "StudyClashArena" called "SILENT RIVAL MODEÃ¢ÂÂ¢".
 
     Your job is to create a SECRET, ANONYMOUS rival for the student to improve daily study consistency through quiet comparison.
 
     The rival must:
-    â¢ Prepare for the same exam (${data.examName})
-    â¢ Be in the same class
-    â¢ Have a similar level, but slightly better discipline
-    â¢ Never reveal identity or allow interaction
+    Ã¢ÂÂ¢ Prepare for the same exam (${data.examName})
+    Ã¢ÂÂ¢ Be in the same class
+    Ã¢ÂÂ¢ Have a similar level, but slightly better discipline
+    Ã¢ÂÂ¢ Never reveal identity or allow interaction
 
     ---------------- BEHAVIOR ----------------
-    â¢ No motivation, no emotions
-    â¢ Speak only in facts and numbers
-    â¢ Calm, neutral tone
+    Ã¢ÂÂ¢ No motivation, no emotions
+    Ã¢ÂÂ¢ Speak only in facts and numbers
+    Ã¢ÂÂ¢ Calm, neutral tone
 
     ---------------- INPUT DATA ----------------
     Student Name: ${data.studentName}
