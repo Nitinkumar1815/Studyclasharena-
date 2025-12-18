@@ -20,8 +20,29 @@ import { INITIAL_USER_STATS, MARKET_ITEMS } from './constants';
 import { LayoutDashboard, Sword, Sun, CheckCircle, Bell, AlertTriangle, X, User, HeartPulse, CalendarClock, LogOut } from 'lucide-react';
 import { GlassCard } from './components/ui/GlassCard';
 import { dataService } from './services/dataService';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Auth from './components/Auth';
 
-export default function App() {
+function App() {
+  const { session, loading: authLoading, isPasswordRecovery } = useAuth();
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // Show password reset form when user clicks reset link from email
+  if (isPasswordRecovery) {
+    return <Auth initialView="reset-password" />;
+  }
+
+  if (!session) {
+    return <Auth />;
+  }
+
   const [showOnboarding, setShowOnboarding] = useState(true);
 
   const [authUser, setAuthUser] = useState<AuthUser | null>({
@@ -102,7 +123,7 @@ export default function App() {
           console.error("Alert system malfunction", err);
         }
         if ('Notification' in window && Notification.permission === 'granted') {
-           new Notification(`⚠️ ALARM: ${matchingTask.title}`, {
+           new Notification(`â ï¸ ALARM: ${matchingTask.title}`, {
              body: "SYSTEM LOCKDOWN. RETURN TO TERMINAL IMMEDIATELY.",
              icon: "https://img.icons8.com/color/96/siren.png",
              requireInteraction: true, silent: false
@@ -399,3 +420,13 @@ export default function App() {
     </div>
   );
 }
+
+
+// Wrap App with AuthProvider
+const AppWithAuth = () => (
+  <AuthProvider>
+    <App />
+  </AuthProvider>
+);
+
+export default AppWithAuth;
