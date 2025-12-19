@@ -1,13 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
-import { Sword, BookOpen, ChevronRight, GraduationCap, Target, Zap, Lock, ArrowRight, Loader2, Layers, Cpu } from 'lucide-react';
+import { Sword, BookOpen, ChevronRight, GraduationCap, Target, Zap, Lock, ArrowRight, Loader2, Layers, Cpu, Trophy } from 'lucide-react';
 import { GlassCard } from './ui/GlassCard';
 
 interface OnboardingFlowProps {
   onComplete: () => void;
 }
-
-type Stage = 'SPLASH' | 'QUIZ' | 'TRANSITION';
 
 const Particles = () => {
   return (
@@ -30,8 +27,41 @@ const Particles = () => {
   );
 };
 
+// --- Added QuizCard component to fix missing reference ---
+interface QuizCardProps {
+  title: string;
+  question: string;
+  options: { label: string; icon: React.ElementType; val: string }[];
+  onSelect: (val: string) => void;
+}
+
+const QuizCard: React.FC<QuizCardProps> = ({ title, question, options, onSelect }) => {
+  return (
+    <GlassCard className="h-full border-cyber-neonBlue/30 bg-black/40 flex flex-col p-8">
+      <div className="mb-8">
+        <h3 className="text-cyber-neonBlue font-mono text-xs uppercase tracking-[0.4em] mb-2">{title}</h3>
+        <h2 className="text-2xl font-bold text-white">{question}</h2>
+      </div>
+      <div className="flex-1 flex flex-col gap-4">
+        {options.map((opt, i) => (
+          <button
+            key={i}
+            onClick={() => onSelect(opt.val)}
+            className="group flex items-center gap-4 p-4 rounded-xl border border-white/10 bg-white/5 hover:border-cyber-neonBlue hover:bg-cyber-neonBlue/10 transition-all text-left"
+          >
+            <div className="p-3 rounded-lg bg-black/40 text-gray-400 group-hover:text-cyber-neonBlue transition-colors">
+              <opt.icon size={24} />
+            </div>
+            <span className="font-bold text-gray-300 group-hover:text-white transition-colors uppercase tracking-widest text-sm">{opt.label}</span>
+          </button>
+        ))}
+      </div>
+    </GlassCard>
+  );
+};
+
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
-  const [stage, setStage] = useState<Stage>('SPLASH');
+  const [stage, setStage] = useState<'SPLASH' | 'QUIZ' | 'TRANSITION'>('SPLASH');
   const [quizStep, setQuizStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
@@ -111,7 +141,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
                  {/* Fallback Graphic */}
                  <div className="logo-fallback hidden absolute inset-0 flex flex-col items-center justify-center text-cyber-neonBlue animate-pulse p-12">
                     <Sword size={120} className="mb-4 drop-shadow-[0_0_15px_rgba(0,243,255,0.8)]" />
-                    <span className="text-3xl font-black italic tracking-tighter uppercase">Study Clash</span>
+                    <span className="text-3xl font-black italic tracking-tighter uppercase">StudyClash<span className="text-white">Arena</span></span>
                     <span className="text-xs font-mono tracking-[0.5em] text-gray-400 mt-2">Arena Protocol</span>
                  </div>
 
@@ -202,7 +232,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
                     title="Objective Set"
                     question="What is your primary directive?"
                     options={[
-                      { label: 'Exam Supremacy', icon: TrophyIcon, val: 'crack' },
+                      { label: 'Exam Supremacy', icon: Trophy, val: 'crack' },
                       { label: 'Neural Efficiency', icon: Zap, val: 'improve' },
                       { label: 'Void Protocol (Focus)', icon: Lock, val: 'focus' }
                     ]}
@@ -229,54 +259,3 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
     </div>
   );
 };
-
-const QuizCard = ({ title, question, options, onSelect }: { title: string, question: string, options: any[], onSelect: (val: string) => void }) => (
-  <GlassCard className="h-full flex flex-col justify-center p-8 border-white/5 shadow-2xl bg-black/40 backdrop-blur-xl relative overflow-hidden group">
-     <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
-        <Cpu size={140} />
-     </div>
-     <span className="text-cyber-neonBlue text-[10px] font-mono uppercase tracking-[0.5em] mb-3 block">{title}</span>
-     <h2 className="text-3xl font-bold text-white mb-10 leading-tight">
-       {question}
-     </h2>
-     <div className="space-y-4">
-        {options.map((opt, i) => (
-           <button
-             key={i}
-             onClick={() => onSelect(opt.val)}
-             className="w-full group relative overflow-hidden bg-white/5 hover:bg-cyber-neonBlue/10 border border-white/5 hover:border-cyber-neonBlue/40 p-5 rounded-2xl flex items-center justify-between transition-all duration-300 hover:scale-[1.02] active:scale-95"
-           >
-              <div className="flex items-center gap-5">
-                 <div className="p-3 bg-black/40 rounded-xl text-gray-400 group-hover:text-cyber-neonBlue group-hover:shadow-[0_0_15px_rgba(0,243,255,0.3)] transition-all">
-                    <opt.icon size={24} />
-                 </div>
-                 <span className="text-lg font-medium text-gray-300 group-hover:text-white transition-colors">{opt.label}</span>
-              </div>
-              <ArrowRight className="text-gray-600 group-hover:text-cyber-neonBlue group-hover:translate-x-1 transition-all" size={20} />
-           </button>
-        ))}
-     </div>
-  </GlassCard>
-);
-
-const TrophyIcon = ({ size, ...props }: { size: number, [key: string]: any }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    {...props}
-  >
-    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-    <path d="M4 22h16" />
-    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
-    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
-    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
-  </svg>
-);

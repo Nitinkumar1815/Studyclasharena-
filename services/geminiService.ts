@@ -9,7 +9,7 @@ import { UserStats } from "../types";
  * Generates a short mission briefing for a specific study topic.
  */
 export const generateBattleBriefing = async (topic: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -33,7 +33,7 @@ export interface HealthDataInput {
  * Analyzes health telemetry and provides strict tips.
  */
 export const generateHealthReport = async (stats: UserStats, data: HealthDataInput): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -56,7 +56,7 @@ export const generateAlarmChallenge = async (taskName: string): Promise<{challen
  * Generates Krishna-themed motivation for a specific task.
  */
 export const generateKrishnaMotivation = async (taskName: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -77,7 +77,7 @@ export const generateKrishnaMotivation = async (taskName: string): Promise<strin
  * Generates guidance based on Bhagavad Gita teachings.
  */
 export const generateGitaGuidance = async (userState: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -87,15 +87,15 @@ export const generateGitaGuidance = async (userState: string): Promise<string> =
       Output Rules:
       1. Start with a relevant short **Sanskrit Shloka** from Bhagavad Gita.
       2. Follow with a powerful, emotional motivation in **Hindi**.
-      3. Address the user as "Parth" (Ã Â¤ÂªÃ Â¤Â¾Ã Â¤Â°Ã Â¥ÂÃ Â¤Â¥) or "Kounteya" (Ã Â¤ÂÃ Â¥ÂÃ Â¤Â¨Ã Â¥ÂÃ Â¤Â¤Ã Â¥ÂÃ Â¤Â¯).
+      3. Address the user as "Parth" (पार्थ) or "Kounteya" (कौन्तेय).
       4. Keep it concise (max 3 sentences).
       
-      Example tone: "Ã Â¤Â¹Ã Â¥Â Ã Â¤ÂªÃ Â¤Â¾Ã Â¤Â°Ã Â¥ÂÃ Â¤Â¥! Ã Â¤Â®Ã Â¤Â¨ Ã Â¤ÂÃ Â¥Â Ã Â¤Â¦Ã Â¥ÂÃ Â¤Â°Ã Â¥ÂÃ Â¤Â¬Ã Â¤Â²Ã Â¤Â¤Ã Â¤Â¾ Ã Â¤ÂÃ Â¥Â Ã Â¤Â¤Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â¾Ã Â¤ÂÃ Â¥Â Ã Â¤ÂÃ Â¤Â° Ã Â¤Â¯Ã Â¥ÂÃ Â¤Â¦Ã Â¥ÂÃ Â¤Â§ (Ã Â¤ÂªÃ Â¤Â¢Ã Â¤Â¼Ã Â¤Â¾Ã Â¤Â) Ã Â¤ÂÃ Â¥Â Ã Â¤Â²Ã Â¤Â¿Ã Â¤Â Ã Â¤ÂÃ Â¤Â¡Ã Â¤Â¼Ã Â¥Â Ã Â¤Â¹Ã Â¥Â Ã Â¤ÂÃ Â¤Â¾Ã Â¤Â!"
+      Example tone: "हे पार्थ! मन की दुर्बलता को त्यागो और युद्ध (पढ़ाई) के लिए खड़े हो जाओ!"
       `,
     });
-    return response.text || "Ã Â¤Â¹Ã Â¥Â Ã Â¤ÂªÃ Â¤Â¾Ã Â¤Â°Ã Â¥ÂÃ Â¤Â¥! Ã Â¤ÂÃ Â¥ÂÃ Â¤Â²Ã Â¥ÂÃ Â¤Â¬Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â Ã Â¤Â®Ã Â¤Â¾ Ã Â¤Â¸Ã Â¥ÂÃ Â¤Â® Ã Â¤ÂÃ Â¤Â®Ã Â¤Â Ã Â¤ÂªÃ Â¤Â¾Ã Â¤Â°Ã Â¥ÂÃ Â¤Â¥ Ã Â¤Â¨Ã Â¥ÂÃ Â¤Â¤Ã Â¤Â¤Ã Â¥ÂÃ Â¤Â¤Ã Â¥ÂÃ Â¤ÂµÃ Â¤Â¯Ã Â¥ÂÃ Â¤Â¯Ã Â¥ÂÃ Â¤ÂªÃ Â¤ÂªÃ Â¤Â¦Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â¤Ã Â¥ÂÃ Â¥Â¤ Ã Â¤Â¹Ã Â¥ÂÃ Â¤Â¦Ã Â¤Â¯Ã Â¤Â¦Ã Â¥ÂÃ Â¤Â°Ã Â¥ÂÃ Â¤Â¬Ã Â¤Â²Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â Ã Â¤Â¤Ã Â¥ÂÃ Â¤Â¯Ã Â¤ÂÃ Â¥ÂÃ Â¤Â¤Ã Â¥ÂÃ Â¤ÂµÃ Â¥ÂÃ Â¤Â¤Ã Â¥ÂÃ Â¤Â¤Ã Â¤Â¿Ã Â¤Â·Ã Â¥ÂÃ Â¤Â  Ã Â¤ÂªÃ Â¤Â°Ã Â¤Â¨Ã Â¥ÂÃ Â¤Â¤Ã Â¤ÂªÃ Â¥Â¤";
+    return response.text || "हे पार्थ! क्लैब्यं मा स्म गमः पार्थ नैतत्त्वय्युपपद्यते। हृदयदौर्बल्यं त्यक्त्वोत्तिष्ठ परन्तप।";
   } catch (error) {
-    return "Ã Â¤Â¹Ã Â¥Â Ã Â¤ÂªÃ Â¤Â¾Ã Â¤Â°Ã Â¥ÂÃ Â¤Â¥, Ã Â¤ÂÃ Â¤Â¬ Ã Â¤Â¤Ã Â¥ÂÃ Â¤Â®Ã Â¥ÂÃ Â¤Â¹Ã Â¤Â¾Ã Â¤Â°Ã Â¤Â¾ Ã Â¤Â®Ã Â¤Â¨ Ã Â¤Â®Ã Â¥ÂÃ Â¤Â¹ Ã Â¤Â°Ã Â¥ÂÃ Â¤ÂªÃ Â¥Â Ã Â¤Â¦Ã Â¤Â²Ã Â¤Â¦Ã Â¤Â² Ã Â¤ÂÃ Â¥Â Ã Â¤ÂªÃ Â¤Â¾Ã Â¤Â° Ã Â¤ÂÃ Â¤Â° Ã Â¤ÂÃ Â¤Â¾Ã Â¤ÂÃ Â¤ÂÃ Â¤Â¾, Ã Â¤Â¤Ã Â¤Â¬ Ã Â¤Â¤Ã Â¥ÂÃ Â¤Â® Ã Â¤ÂÃ Â¤Â°Ã Â¥ÂÃ Â¤Â® Ã Â¤ÂÃ Â¥Â Ã Â¤Â¬Ã Â¤ÂÃ Â¤Â§Ã Â¤Â¨ Ã Â¤Â¸Ã Â¥Â Ã Â¤Â®Ã Â¥ÂÃ Â¤ÂÃ Â¥ÂÃ Â¤Â¤ Ã Â¤Â¹Ã Â¥Â Ã Â¤ÂÃ Â¤Â¾Ã Â¤ÂÃ Â¤ÂÃ Â¥ÂÃ Â¥Â¤ Ã Â¤ÂÃ Â¤ÂªÃ Â¤Â¨Ã Â¤Â¾ Ã Â¤Â§Ã Â¥ÂÃ Â¤Â¯Ã Â¤Â¾Ã Â¤Â¨ Ã Â¤ÂÃ Â¥ÂÃ Â¤ÂÃ Â¤Â¦Ã Â¥ÂÃ Â¤Â°Ã Â¤Â¿Ã Â¤Â¤ Ã Â¤ÂÃ Â¤Â°Ã Â¥ÂÃ Â¥Â¤";
+    return "हे पार्थ, जब तुम्हारा मन मोह रूपी दलदल को पार कर जाएगा, तब तुम कर्म के बंधन से मुक्त हो जाओगे। अपना ध्यान केंद्रित करो।";
   }
 };
 
@@ -103,7 +103,7 @@ export const generateGitaGuidance = async (userState: string): Promise<string> =
  * Generates a harsh or witty verdict based on user stats.
  */
 export const generateOverlordMessage = async (stats: UserStats): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -147,22 +147,22 @@ export interface RivalInput {
  * Generates analysis for the silent rival mode.
  */
 export const generateRivalAnalysis = async (data: RivalInput): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const systemInstruction = `
-    You are an AI feature inside the student app "StudyClashArena" called "SILENT RIVAL MODEÃ¢ÂÂ¢".
+    You are an AI feature inside the student app "StudyClashArena" called "SILENT RIVAL MODE™".
 
     Your job is to create a SECRET, ANONYMOUS rival for the student to improve daily study consistency through quiet comparison.
 
     The rival must:
-    Ã¢ÂÂ¢ Prepare for the same exam (${data.examName})
-    Ã¢ÂÂ¢ Be in the same class
-    Ã¢ÂÂ¢ Have a similar level, but slightly better discipline
-    Ã¢ÂÂ¢ Never reveal identity or allow interaction
+    • Prepare for the same exam (${data.examName})
+    • Be in the same class
+    • Have a similar level, but slightly better discipline
+    • Never reveal identity or allow interaction
 
     ---------------- BEHAVIOR ----------------
-    Ã¢ÂÂ¢ No motivation, no emotions
-    Ã¢ÂÂ¢ Speak only in facts and numbers
-    Ã¢ÂÂ¢ Calm, neutral tone
+    • No motivation, no emotions
+    • Speak only in facts and numbers
+    • Calm, neutral tone
 
     ---------------- INPUT DATA ----------------
     Student Name: ${data.studentName}
@@ -202,7 +202,7 @@ export const generateRivalAnalysis = async (data: RivalInput): Promise<string> =
  * Suggests high-yield study topics for specific exams.
  */
 export const generateStudySuggestions = async (examName: string): Promise<string[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -229,7 +229,7 @@ export const generateStudySuggestions = async (examName: string): Promise<string
  * This function was missing in the previous implementation and caused a build error in AICompanion.tsx.
  */
 export const generateCompanionResponse = async (message: string, context: string, stats: UserStats): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
