@@ -1,6 +1,21 @@
 
 import { UserStats, Badge, MarketItem } from './types';
 
+export const MARVEL_RANKS = [
+  "Iron Scholastic", "Captain Academic", "Focus Panther", "Scarlet Studious", "Strange Mind", 
+  "Quantum Widow", "Stark Logic", "Thor Focus", "Hulk Intelligence", "Rocket Reader", 
+  "Groot Growth", "Gamora Grade", "Visionary Mind", "Spider-Study", "Deadpool Discipline", 
+  "Ant-Man Analysis", "Wasp Wisdom", "Falcon Focus", "Winter Scholar", "Nebula Neural", 
+  "Drax Diligence", "Mantis Meditation", "Thanos Theory", "Loki Lore", "Odin Oracle", 
+  "Valkyrie Veteran", "Panther Principal", "Shuri Smart", "Okoye Order", "Bucky Brain", 
+  "Carol Core", "Clint Concentration", "Bruce Bright", "Tony Tech", "Steve Steady", 
+  "Natasha Network", "Wanda Wave", "Pietro Pace", "Sam Sky", "Rhodey Rigor", 
+  "Peter Power", "Scott Science", "Hope Harmony", "T'Challa Talent", "Strange Sorcerer", 
+  "Wong Word", "Quill Quest", "Mantis Mindset", "Rocket Rig", "Groot Genius"
+];
+
+export const getRandomMarvelRank = () => MARVEL_RANKS[Math.floor(Math.random() * MARVEL_RANKS.length)];
+
 export const INITIAL_USER_STATS: UserStats = {
   id: 'guest-operator',
   level: 1,
@@ -9,8 +24,8 @@ export const INITIAL_USER_STATS: UserStats = {
   streak: 0,
   energy: 100,
   focusTimeMinutes: 0,
-  rank: "Recruit",
-  credits: 0, // Ensure starting value is 0
+  rank: "Sector Hero",
+  credits: 0, 
   mood: 'focus',
   avatar: "https://api.dicebear.com/9.x/bottts/svg?seed=operator",
   unlockedBadgeIds: [],

@@ -18,7 +18,7 @@ export const dataService = {
       return null;
     }
 
-    if (!data) return null; // Let the app handle first-time initialization
+    if (!data) return null; 
 
     return {
       id: data.id,
@@ -27,7 +27,7 @@ export const dataService = {
       xpToNextLevel: data.xp_to_next_level || 1000,
       credits: data.credits ?? 0,
       streak: data.streak || 0,
-      rank: data.rank || 'Novice Recruit',
+      rank: data.rank || 'Sector Hero', // Removed Novice Recruit
       energy: data.energy ?? 100,
       focusTimeMinutes: data.focus_time_minutes || 0,
       mood: data.mood || 'focus',
@@ -40,7 +40,6 @@ export const dataService = {
   async updateUserProfile(userId: string, updates: Partial<UserStats>) {
     if (userId === 'guest-operator') return;
     
-    // First check if profile exists
     const { data: existing } = await supabase.from('profiles').select('id').eq('id', userId).maybeSingle();
 
     const dbUpdates: any = {};
@@ -57,11 +56,9 @@ export const dataService = {
     if (updates.rank !== undefined) dbUpdates.rank = updates.rank;
 
     if (!existing) {
-      // Create new profile
       const { error } = await supabase.from('profiles').insert({ id: userId, ...dbUpdates });
       if (error) console.error('Error creating profile:', error);
     } else {
-      // Update existing
       const { error } = await supabase.from('profiles').update(dbUpdates).eq('id', userId);
       if (error) console.error('Error updating profile:', error);
     }
@@ -92,7 +89,7 @@ export const dataService = {
     if (userId === 'guest-operator') return [];
     const { data, error } = await supabase.from('schedule').select('*').eq('user_id', userId);
     if (error) return [];
-    return data.map((t: any) => ({ id: t.id, title: t.title, startTime: t.start_time, type: t.type, completed: t.completed, strictMode: t.strict_mode }));
+    return data.map((t: any) => ({ id: t.id, title: t.title, startTime: t.start_time, type: t.type, completed: t.completed, strict_mode: t.strict_mode }));
   },
 
   async addScheduleTask(userId: string, task: ScheduleItem) {
@@ -128,7 +125,7 @@ export const dataService = {
   async getLeaderboard(): Promise<any[]> {
     const { data, error } = await supabase.from('profiles').select('id, rank, level, xp, avatar_url').order('xp', { ascending: false }).limit(10);
     if (error) return [];
-    return data.map((p: any) => ({ id: p.id, name: p.rank || 'Recruit', level: p.level || 1, xp: p.xp || 0, avatar: p.avatar_url }));
+    return data.map((p: any) => ({ id: p.id, name: p.rank || 'Sector Hero', level: p.level || 1, xp: p.xp || 0, avatar: p.avatar_url }));
   },
 
   async saveStudySession(session: Omit<StudySession, 'id' | 'timestamp'>) {

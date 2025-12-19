@@ -17,7 +17,7 @@ import { SilentRival } from './components/SilentRival';
 import { OnboardingFlow } from './components/OnboardingFlow';
 import { AuthScreens } from './components/AuthScreens';
 import { AppView, UserStats, ScheduleItem, MarketItem, ActiveSession, ActiveDuel, AuthUser } from './types';
-import { INITIAL_USER_STATS, MARKET_ITEMS, MOCK_BADGES } from './constants';
+import { INITIAL_USER_STATS, MARKET_ITEMS, MOCK_BADGES, getRandomMarvelRank } from './constants';
 import { LayoutDashboard, Sword, Sun, CheckCircle, Bell, AlertTriangle, X, User, HeartPulse, CalendarClock, LogOut, Loader2 } from 'lucide-react';
 import { GlassCard } from './components/ui/GlassCard';
 import { dataService } from './services/dataService';
@@ -78,16 +78,17 @@ export default function App() {
       try {
         let profile = await dataService.getUserProfile(authUser.id);
         
-        // Ensure strictly fresh profile for real users
+        // If profile doesn't exist, create it with a unique Marvel Rank
         if (!profile || profile.id === 'guest-operator') {
+          const marvelRank = getRandomMarvelRank();
           const startStats: UserStats = {
              ...INITIAL_USER_STATS,
              id: authUser.id,
-             rank: 'Novice Recruit',
+             rank: marvelRank, // Assigning dynamic Marvel Rank here
              level: 1,
              xp: 0,
              xpToNextLevel: 1000,
-             credits: 0, // Zero starting credits for real users
+             credits: 0, 
              streak: 0,
              focusTimeMinutes: 0
           };
@@ -100,7 +101,7 @@ export default function App() {
         setUserStats({ ...profile, unlockedBadgeIds: dbBadges });
         
         const dbInventory = await dataService.getInventory(authUser.id);
-        setInventory(dbInventory); // Use DB inventory, no defaults
+        setInventory(dbInventory); 
         
         const dbSchedule = await dataService.getSchedule(authUser.id);
         setSchedule(dbSchedule);
@@ -158,10 +159,6 @@ export default function App() {
           setUserStats({ ...userStats, credits: newCredits, lastDailyClaim: now });
           await dataService.updateUserProfile(authUser.id, { credits: newCredits, lastDailyClaim: now });
           showToast("Supply Drop Claimed", `+${reward} Credits added.`, "success");
-          
-          // Check for "Supporter" achievement (a8)
-          // For brevity, we'll assume badges are checked on server or in background periodically, 
-          // but we'll add one check here for demonstration.
       } else {
           showToast("Cooldown Active", "Supply Drop available tomorrow.", "error");
       }
@@ -195,7 +192,6 @@ export default function App() {
     await dataService.updateUserProfile(authUser.id, updates);
     await dataService.saveStudySession({ userId: authUser.id, taskName: activeSession?.taskName || 'Battle', durationMinutes, xpEarned, creditsEarned: earnedCredits });
     
-    // Check basic badges
     if (updates.focusTimeMinutes >= 60 && !userStats.unlockedBadgeIds.includes('f1')) {
         await dataService.unlockBadge(authUser.id, 'f1');
         setUserStats(prev => prev ? { ...prev, unlockedBadgeIds: [...prev.unlockedBadgeIds, 'f1'] } : null);
