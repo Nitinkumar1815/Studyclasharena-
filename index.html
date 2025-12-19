@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>StudyClash Arena</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -81,6 +81,11 @@
         background-color: #050505;
         color: #ffffff;
         overflow-x: hidden;
+        /* Mobile safe area padding */
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
       }
       .glass-panel {
         background: rgba(19, 19, 31, 0.6);
@@ -91,42 +96,9 @@
       .neon-text {
         text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
       }
-      .text-shadow-red {
-        text-shadow: 0 0 15px rgba(255, 0, 60, 0.8);
-      }
-      .neon-border {
-        box-shadow: 0 0 15px rgba(188, 19, 254, 0.3);
-      }
-      /* 3D Utilities */
-      .perspective-1000 {
-        perspective: 1000px;
-      }
-      .transform-style-3d {
-        transform-style: preserve-3d;
-      }
-      .rotate-y-12 {
-        transform: rotateY(12deg);
-      }
-      .rotate-x-6 {
-        transform: rotateX(6deg);
-      }
-      .rotate-x-12 {
-        transform: rotateX(12deg);
-      }
-      
       /* Custom scrollbar */
       ::-webkit-scrollbar {
-        width: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #0a0a12; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #333; 
-        border-radius: 3px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #00f3ff; 
+        width: 0px; /* Hide scrollbar for cleaner mobile look */
       }
     </style>
   <script type="importmap">

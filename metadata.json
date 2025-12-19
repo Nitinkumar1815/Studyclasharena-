@@ -1,7 +1,9 @@
 {
   "name": "StudyClash Arena",
-  "description": "A futuristic, gamified study environment where knowledge is power. Battle distractions, earn XP, and level up your mind with AI assistance.",
+  "description": "Futuristic Mobile Study OS",
   "requestFramePermissions": [
-    "microphone"
+    "microphone",
+    "camera",
+    "geolocation"
   ]
 }

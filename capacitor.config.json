@@ -1,0 +1,16 @@
+
+{
+  "appId": "com.studyclash.arena",
+  "appName": "StudyClash Arena",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#050505"
+    }
+  }
+}
