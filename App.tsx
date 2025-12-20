@@ -19,7 +19,7 @@ import { StartupSplash } from './components/StartupSplash';
 import { AuthScreens } from './components/AuthScreens';
 import { AppView, UserStats, ScheduleItem, MarketItem, ActiveSession, ActiveDuel, AuthUser } from './types';
 import { INITIAL_USER_STATS, MARKET_ITEMS, MOCK_BADGES, getRandomMarvelRank } from './constants';
-import { LayoutDashboard, Sword, Sun, CheckCircle, Bell, AlertTriangle, X, User, HeartPulse, CalendarClock, LogOut, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Sword, Sun, CheckCircle, Bell, AlertTriangle, X, User, HeartPulse, CalendarClock, LogOut, Loader2, RefreshCw } from 'lucide-react';
 import { GlassCard } from './components/ui/GlassCard';
 import { dataService } from './services/dataService';
 import { authService } from './services/authService';
@@ -42,51 +42,103 @@ export default function App() {
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
   const [activeAlarmTask, setActiveAlarmTask] = useState<ScheduleItem | null>(null);
   const [toast, setToast] = useState<{message: string, subMessage?: string, type: 'success' | 'error'} | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  // --- REAL-TIME SUBSCRIPTION LOGIC ---
+  // --- REAL-TIME NEURAL UPLINK ---
   useEffect(() => {
     if (!authUser) return;
 
-    // Subscribe to Profiles changes (Real-time XP, Level, Credits)
-    const profileSubscription = supabase
-      .channel('profile-changes')
+    console.log("Establishing Real-time Neural Link...");
+
+    // 1. Profile Channel: Watch for changes in Level, XP, Credits
+    const profileChannel = supabase
+      .channel(`neural-stats-${authUser.id}`)
       .on('postgres_changes', { 
         event: 'UPDATE', 
         schema: 'public', 
         table: 'profiles', 
         filter: `id=eq.${authUser.id}` 
-      }, async (payload) => {
+      }, (payload) => {
         const newData = payload.new;
-        setUserStats(prev => prev ? {
-          ...prev,
-          level: newData.level,
-          xp: newData.xp,
-          credits: newData.credits,
-          rank: newData.rank,
-          energy: newData.energy,
-          focusTimeMinutes: newData.focus_time_minutes,
-          streak: newData.streak
-        } : null);
+        setIsSyncing(true);
+        setUserStats(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            level: newData.level,
+            xp: newData.xp,
+            xpToNextLevel: newData.xp_to_next_level,
+            credits: newData.credits,
+            rank: newData.rank,
+            energy: newData.energy,
+            focusTimeMinutes: newData.focus_time_minutes,
+            streak: newData.streak,
+            lastDailyClaim: parseInt(newData.last_daily_claim || '0'),
+            lastStudyDate: newData.last_study_date,
+            mood: newData.mood
+          };
+        });
+        setTimeout(() => setIsSyncing(false), 1000);
       })
       .subscribe();
 
-    // Subscribe to Schedule changes
-    const scheduleSubscription = supabase
-      .channel('schedule-changes')
+    // 2. Schedule Channel: Real-time task modifications
+    const scheduleChannel = supabase
+      .channel(`tactical-timeline-${authUser.id}`)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
         table: 'schedule', 
         filter: `user_id=eq.${authUser.id}` 
-      }, async () => {
+      }, async (payload) => {
+        setIsSyncing(true);
+        // We re-fetch the whole list to ensure correct sorting and mapping
         const updatedSchedule = await dataService.getSchedule(authUser.id);
         setSchedule(updatedSchedule);
+        setTimeout(() => setIsSyncing(false), 1000);
+      })
+      .subscribe();
+
+    // 3. Inventory Channel: Remote item acquisition
+    const inventoryChannel = supabase
+      .channel(`black-market-${authUser.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'inventory',
+        filter: `user_id=eq.${authUser.id}`
+      }, async () => {
+        const dbInventory = await dataService.getInventory(authUser.id);
+        setInventory(dbInventory);
+      })
+      .subscribe();
+
+    // 4. Badge Channel: Automatic achievement unlocks
+    const badgeChannel = supabase
+      .channel(`hall-of-fame-${authUser.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'user_badges',
+        filter: `user_id=eq.${authUser.id}`
+      }, (payload) => {
+        const badgeId = payload.new.badge_id;
+        const badge = MOCK_BADGES.find(b => b.id === badgeId);
+        showToast("Achievement Unlocked!", badge?.name || "Neural Mastery", "success");
+        
+        setUserStats(prev => {
+          if (!prev) return prev;
+          if (prev.unlockedBadgeIds.includes(badgeId)) return prev;
+          return { ...prev, unlockedBadgeIds: [...prev.unlockedBadgeIds, badgeId] };
+        });
       })
       .subscribe();
 
     return () => {
-      supabase.removeChannel(profileSubscription);
-      supabase.removeChannel(scheduleSubscription);
+      supabase.removeChannel(profileChannel);
+      supabase.removeChannel(scheduleChannel);
+      supabase.removeChannel(inventoryChannel);
+      supabase.removeChannel(badgeChannel);
     };
   }, [authUser]);
 
@@ -111,6 +163,8 @@ export default function App() {
       } else {
         setAuthUser(null);
         setUserStats(null);
+        setInventory([]);
+        setSchedule([]);
       }
     });
 
@@ -138,7 +192,7 @@ export default function App() {
           setSchedule(dbSchedule);
         }
       } catch (error) {
-        console.error("Data sync failed:", error);
+        console.error("Data Sync Fault:", error);
       } finally {
         setDataLoading(false);
       }
@@ -167,7 +221,7 @@ export default function App() {
     await dataService.updateUserProfile(authUser.id, startStats);
     setUserStats(startStats);
     setShowOnboarding(false);
-    showToast("System Calibrated", `Rank Assigned: ${marvelRank}`, "success");
+    showToast("Identity Forged", `Rank: ${marvelRank}`, "success");
   };
 
   const handleBattleComplete = async (xpEarned: number, durationMinutes: number) => {
@@ -184,10 +238,10 @@ export default function App() {
       const yesterdayStr = yesterday.toISOString().split('T')[0];
       if (lastStudy === yesterdayStr) {
         newStreak += 1;
-        showToast("STREAK INCREASED!", `Day ${newStreak} of focus.`, "success");
+        showToast("STREAK INCREASED!", `Day ${newStreak}`, "success");
       } else {
         newStreak = 1;
-        showToast("STREAK RESET", "You missed a day. Starting over.", "error");
+        showToast("STREAK RESET", "System missed a day.", "error");
       }
     }
 
@@ -200,7 +254,7 @@ export default function App() {
        newLevel += 1;
        newXp = newXp - newXpToNext; 
        newXpToNext = Math.floor(newXpToNext * 1.5); 
-       showToast("LEVEL UP!", `Welcome to Level ${newLevel}`, "success");
+       showToast("LEVEL UP!", `Level ${newLevel} Achieved`, "success");
        earnedCredits += 200; 
     }
 
@@ -215,8 +269,8 @@ export default function App() {
       lastStudyDate: today 
     };
 
-    // Optimistic update
-    setUserStats({ ...userStats, ...updates });
+    setUserStats(prev => prev ? { ...prev, ...updates } : null);
+    
     await dataService.updateUserProfile(authUser.id, updates);
     await dataService.saveStudySession({ 
       userId: authUser.id, 
@@ -228,9 +282,8 @@ export default function App() {
 
     if (updates.focusTimeMinutes >= 60 && !userStats.unlockedBadgeIds.includes('f1')) {
         await dataService.unlockBadge(authUser.id, 'f1');
-        setUserStats(prev => prev ? { ...prev, unlockedBadgeIds: [...prev.unlockedBadgeIds, 'f1'] } : null);
-        showToast("Achievement Unlocked!", "Focus Spark", "success");
     }
+    
     setActiveSession(null);
     setCurrentView(AppView.DASHBOARD);
   };
@@ -240,14 +293,15 @@ export default function App() {
     if (inventory.includes(item.id)) return false;
     if (userStats.credits >= item.cost) {
       const newCredits = userStats.credits - item.cost;
-      setUserStats({ ...userStats, credits: newCredits });
+      setUserStats(prev => prev ? { ...prev, credits: newCredits } : null);
       setInventory(prev => [...prev, item.id]);
+      
       await dataService.updateUserProfile(authUser.id, { credits: newCredits });
       await dataService.addToInventory(authUser.id, item.id, item.type);
-      showToast(`Acquired: ${item.name}`, `Added to Inventory`, 'success');
+      showToast(`Item Acquired`, item.name, 'success');
       return true; 
     } else {
-      showToast("Insufficient Credits", "Study more to mine credits.", "error");
+      showToast("Insufficient Credits", "Requires more study cycles.", "error");
       return false; 
     }
   };
@@ -267,18 +321,12 @@ export default function App() {
           const newCredits = userStats.credits + rewardCredits;
           const newXP = userStats.xp + rewardXP;
           const updates = { credits: newCredits, xp: newXP, lastDailyClaim: now, energy: 100 };
-          setUserStats({ ...userStats, ...updates });
+          
+          setUserStats(prev => prev ? { ...prev, ...updates } : null);
           await dataService.updateUserProfile(authUser.id, updates);
-          showToast("Supply Drop Secured", `+${rewardCredits} CR, +${rewardXP} XP, Energy Refilled`, "success");
-          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
-          audio.volume = 0.4;
-          audio.play().catch(() => {});
+          showToast("Supply Drop Secured", `+${rewardCredits} CR, +${rewardXP} XP`, "success");
       } else {
-          const nextClaim = new Date(last + 86400000);
-          const diff = nextClaim.getTime() - now;
-          const hours = Math.floor(diff / (1000 * 60 * 60));
-          const mins = Math.floor((diff / (1000 * 60)) % 60);
-          showToast("Protocol Locked", `Next Supply Drop in ${hours}h ${mins}m.`, "error");
+          showToast("Supply Lock Active", "Try again in 24h.", "error");
       }
   };
 
@@ -286,29 +334,25 @@ export default function App() {
     await authService.logout();
     setAuthUser(null);
     setUserStats(null);
+    setInventory([]);
+    setSchedule([]);
   };
 
   const handleAddScheduleTask = async (task: ScheduleItem) => {
     if (!authUser) return;
-    const addedTask = await dataService.addScheduleTask(authUser.id, task);
-    if (addedTask) {
-      const mapped: ScheduleItem = { id: addedTask.id.toString(), title: addedTask.title, startTime: addedTask.start_time, type: addedTask.type, completed: addedTask.completed, strictMode: addedTask.strict_mode };
-      setSchedule(prev => [...prev, mapped]);
-      showToast("Directive Uploaded", "Timeline synchronized.", "success");
-    }
+    await dataService.addScheduleTask(authUser.id, task);
+    showToast("Objective Uploaded", task.title, "success");
   };
 
   const handleRemoveScheduleTask = async (taskId: string) => {
     await dataService.deleteScheduleTask(taskId);
-    setSchedule(prev => prev.filter(t => t.id !== taskId));
-    showToast("Directive Purged", "Mission timeline updated.", "success");
+    showToast("Directive Purged", "Timeline updated.", "success");
   };
 
   const handleTaskUnlock = async (taskId: string) => {
     await dataService.updateScheduleTask(taskId, { completed: true });
-    setSchedule(prev => prev.map(t => t.id === taskId ? { ...t, completed: true } : t));
     setActiveAlarmTask(null);
-    showToast("Neural Lock Disengaged", "Objective completed.", "success");
+    showToast("Neural Lock Disengaged", "Objective secured.", "success");
   };
 
   if (showStartupSplash) {
@@ -318,8 +362,11 @@ export default function App() {
   if (!appInitialized || (authUser && dataLoading)) {
     return (
       <div className="fixed inset-0 bg-cyber-black flex flex-col items-center justify-center">
-        <Loader2 className="w-12 h-12 text-cyber-neonBlue animate-spin mb-4" />
-        <p className="text-gray-500 font-mono text-[10px] uppercase tracking-[0.5em] animate-pulse">Establishing Secure Link...</p>
+        <div className="relative w-16 h-16 mb-4">
+           <Loader2 className="w-16 h-16 text-cyber-neonBlue animate-spin" />
+           <div className="absolute inset-0 border-2 border-dashed border-cyber-neonPurple rounded-full animate-spin-slow opacity-20" />
+        </div>
+        <p className="text-gray-500 font-mono text-[10px] uppercase tracking-[0.5em] animate-pulse">Establishing Secure Neural Link...</p>
       </div>
     );
   }
@@ -344,15 +391,25 @@ export default function App() {
 
   return (
     <div className="min-h-screen font-sans bg-cyber-black text-white selection:bg-cyber-neonBlue selection:text-black">
-      {toast && (
-        <div className="fixed top-24 right-4 z-[100] animate-in slide-in-from-right fade-in duration-300">
-           <GlassCard className={`min-w-[300px] border-l-4 p-4 flex items-start gap-3 shadow-2xl backdrop-blur-xl ${toast.type === 'success' ? 'border-l-green-500 bg-green-900/20' : 'border-l-red-500 bg-red-900/20'}`}>
+      {/* GLOBAL TOAST & SYNC SYSTEM */}
+      <div className="fixed top-24 right-4 z-[100] flex flex-col gap-2 items-end">
+        {isSyncing && (
+          <div className="bg-cyber-neonBlue/10 border border-cyber-neonBlue/40 px-3 py-1 rounded-full flex items-center gap-2 animate-in fade-in slide-in-from-right-4">
+             <RefreshCw size={10} className="text-cyber-neonBlue animate-spin" />
+             <span className="text-[9px] font-mono text-cyber-neonBlue uppercase tracking-widest">Neural Syncing...</span>
+          </div>
+        )}
+        {toast && (
+          <GlassCard className={`min-w-[300px] border-l-4 p-4 flex items-start gap-3 shadow-[0_0_30px_rgba(0,0,0,0.5)] backdrop-blur-xl animate-in slide-in-from-right fade-in duration-300 ${toast.type === 'success' ? 'border-l-green-500 bg-green-950/20' : 'border-l-red-500 bg-red-950/20'}`}>
               <div className={`mt-0.5 p-1 rounded-full ${toast.type === 'success' ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>{toast.type === 'success' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}</div>
-              <div className="flex-1"><h4 className={`font-bold text-sm ${toast.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>{toast.message}</h4>{toast.subMessage && <p className="text-xs text-gray-400 mt-1">{toast.subMessage}</p>}</div>
+              <div className="flex-1">
+                <h4 className={`font-bold text-sm ${toast.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>{toast.message}</h4>
+                {toast.subMessage && <p className="text-[10px] text-gray-500 mt-1 uppercase font-mono">{toast.subMessage}</p>}
+              </div>
               <button onClick={() => setToast(null)} className="text-gray-500 hover:text-white"><X size={14} /></button>
-           </GlassCard>
-        </div>
-      )}
+          </GlassCard>
+        )}
+      </div>
 
       {activeAlarmTask && activeAlarmTask.strictMode && <ChronoLock task={activeAlarmTask} onUnlock={() => handleTaskUnlock(activeAlarmTask.id)} />}
 
@@ -398,7 +455,9 @@ export default function App() {
               onSessionEnd={() => setActiveSession(null)}
               onComplete={handleBattleComplete} 
               onExit={() => setCurrentView(AppView.DASHBOARD)} 
-              onConsumeItem={async (id) => { setInventory(prev => prev.filter(i => i !== id)); await dataService.consumeItem(authUser.id, id); }}
+              onConsumeItem={async (id) => { 
+                await dataService.consumeItem(authUser.id, id); 
+              }}
             />
           )}
           {currentView === AppView.DUEL && (
