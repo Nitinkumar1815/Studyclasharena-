@@ -15,6 +15,7 @@ import { WisdomShrine } from './components/WisdomShrine';
 import { SoundscapeControl } from './components/SoundscapeControl';
 import { SilentRival } from './components/SilentRival';
 import { OnboardingFlow } from './components/OnboardingFlow';
+import { StartupSplash } from './components/StartupSplash';
 import { AuthScreens } from './components/AuthScreens';
 import { AppView, UserStats, ScheduleItem, MarketItem, ActiveSession, ActiveDuel, AuthUser } from './types';
 import { INITIAL_USER_STATS, MARKET_ITEMS, MOCK_BADGES, getRandomMarvelRank } from './constants';
@@ -25,6 +26,7 @@ import { authService } from './services/authService';
 import { supabase } from './services/supabase';
 
 export default function App() {
+  const [showStartupSplash, setShowStartupSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [appInitialized, setAppInitialized] = useState(false);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
@@ -40,8 +42,53 @@ export default function App() {
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
   const [activeAlarmTask, setActiveAlarmTask] = useState<ScheduleItem | null>(null);
   const [toast, setToast] = useState<{message: string, subMessage?: string, type: 'success' | 'error'} | null>(null);
-  
-  const sirenAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // --- REAL-TIME SUBSCRIPTION LOGIC ---
+  useEffect(() => {
+    if (!authUser) return;
+
+    // Subscribe to Profiles changes (Real-time XP, Level, Credits)
+    const profileSubscription = supabase
+      .channel('profile-changes')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'profiles', 
+        filter: `id=eq.${authUser.id}` 
+      }, async (payload) => {
+        const newData = payload.new;
+        setUserStats(prev => prev ? {
+          ...prev,
+          level: newData.level,
+          xp: newData.xp,
+          credits: newData.credits,
+          rank: newData.rank,
+          energy: newData.energy,
+          focusTimeMinutes: newData.focus_time_minutes,
+          streak: newData.streak
+        } : null);
+      })
+      .subscribe();
+
+    // Subscribe to Schedule changes
+    const scheduleSubscription = supabase
+      .channel('schedule-changes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'schedule', 
+        filter: `user_id=eq.${authUser.id}` 
+      }, async () => {
+        const updatedSchedule = await dataService.getSchedule(authUser.id);
+        setSchedule(updatedSchedule);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(profileSubscription);
+      supabase.removeChannel(scheduleSubscription);
+    };
+  }, [authUser]);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -78,33 +125,18 @@ export default function App() {
       try {
         let profile = await dataService.getUserProfile(authUser.id);
         
-        // If profile doesn't exist, create it with a unique Marvel Rank
         if (!profile || profile.id === 'guest-operator') {
-          const marvelRank = getRandomMarvelRank();
-          const startStats: UserStats = {
-             ...INITIAL_USER_STATS,
-             id: authUser.id,
-             rank: marvelRank, // Assigning dynamic Marvel Rank here
-             level: 1,
-             xp: 0,
-             xpToNextLevel: 1000,
-             credits: 0, 
-             streak: 0,
-             focusTimeMinutes: 0
-          };
-          await dataService.updateUserProfile(authUser.id, startStats);
-          profile = startStats;
           setShowOnboarding(true);
+        } else {
+          const dbBadges = await dataService.getUnlockedBadges(authUser.id);
+          setUserStats({ ...profile, unlockedBadgeIds: dbBadges });
+          
+          const dbInventory = await dataService.getInventory(authUser.id);
+          setInventory(dbInventory); 
+          
+          const dbSchedule = await dataService.getSchedule(authUser.id);
+          setSchedule(dbSchedule);
         }
-        
-        const dbBadges = await dataService.getUnlockedBadges(authUser.id);
-        setUserStats({ ...profile, unlockedBadgeIds: dbBadges });
-        
-        const dbInventory = await dataService.getInventory(authUser.id);
-        setInventory(dbInventory); 
-        
-        const dbSchedule = await dataService.getSchedule(authUser.id);
-        setSchedule(dbSchedule);
       } catch (error) {
         console.error("Data sync failed:", error);
       } finally {
@@ -114,58 +146,51 @@ export default function App() {
     fetchData();
   }, [authUser]);
 
-  const handleTaskUnlock = async (taskId: string) => {
-    setSchedule(prev => prev.map(t => t.id === taskId ? { ...t, completed: true } : t));
-    if (sirenAudioRef.current) { sirenAudioRef.current.pause(); sirenAudioRef.current.currentTime = 0; }
-    setActiveAlarmTask(null);
-    if (authUser) {
-      await dataService.updateScheduleTask(taskId, { completed: true });
-    }
-  };
-
-  const handleAddScheduleTask = async (task: ScheduleItem) => {
+  const handleOnboardingComplete = async (data: Record<string, string>) => {
     if (!authUser) return;
-    const newTask = await dataService.addScheduleTask(authUser.id, task);
-    if (newTask) {
-      setSchedule(prev => [...prev, newTask].sort((a, b) => a.startTime.localeCompare(b.startTime)));
-    }
-  };
-
-  const handleRemoveScheduleTask = async (id: string) => {
-    if (!authUser) return;
-    setSchedule(prev => prev.filter(t => t.id !== id));
-    await dataService.deleteScheduleTask(id);
-  };
-
-  const handleLogout = async () => {
-    await authService.logout();
-    setAuthUser(null);
-    setUserStats(null);
-    setCurrentView(AppView.DASHBOARD);
-  };
-
-  const showToast = (msg: string, subMsg: string = "", type: 'success' | 'error' = 'success') => {
-    setToast({ message: msg, subMessage: subMsg, type });
-    setTimeout(() => setToast(null), 4000);
-  };
-
-  const handleDailyClaim = async () => {
-      if (!userStats || !authUser) return;
-      const now = Date.now();
-      const last = userStats.lastDailyClaim || 0;
-      if (now - last > 86400000) {
-          const reward = 300;
-          const newCredits = userStats.credits + reward;
-          setUserStats({ ...userStats, credits: newCredits, lastDailyClaim: now });
-          await dataService.updateUserProfile(authUser.id, { credits: newCredits, lastDailyClaim: now });
-          showToast("Supply Drop Claimed", `+${reward} Credits added.`, "success");
-      } else {
-          showToast("Cooldown Active", "Supply Drop available tomorrow.", "error");
-      }
+    const marvelRank = getRandomMarvelRank();
+    const startStats: UserStats = {
+       ...INITIAL_USER_STATS,
+       id: authUser.id,
+       rank: marvelRank,
+       level: 1,
+       xp: 0,
+       xpToNextLevel: 1000,
+       credits: 0, 
+       streak: 0,
+       focusTimeMinutes: 0,
+       sector: data.role,
+       goal: data.goal,
+       classGrade: data.class,
+       lastStudyDate: new Date().toISOString().split('T')[0]
+    };
+    await dataService.updateUserProfile(authUser.id, startStats);
+    setUserStats(startStats);
+    setShowOnboarding(false);
+    showToast("System Calibrated", `Rank Assigned: ${marvelRank}`, "success");
   };
 
   const handleBattleComplete = async (xpEarned: number, durationMinutes: number) => {
     if (!userStats || !authUser) return;
+    const today = new Date().toISOString().split('T')[0];
+    const lastStudy = userStats.lastStudyDate || "";
+    let newStreak = userStats.streak;
+    
+    if (lastStudy === "") {
+      newStreak = 1;
+    } else if (lastStudy !== today) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      if (lastStudy === yesterdayStr) {
+        newStreak += 1;
+        showToast("STREAK INCREASED!", `Day ${newStreak} of focus.`, "success");
+      } else {
+        newStreak = 1;
+        showToast("STREAK RESET", "You missed a day. Starting over.", "error");
+      }
+    }
+
     let earnedCredits = (Math.floor(durationMinutes) * 10) + 100;
     let newXp = userStats.xp + xpEarned;
     let newLevel = userStats.level;
@@ -184,20 +209,28 @@ export default function App() {
       xp: newXp, 
       xpToNextLevel: newXpToNext, 
       credits: userStats.credits + earnedCredits, 
-      focusTimeMinutes: userStats.focusTimeMinutes + durationMinutes,
-      energy: Math.max(0, userStats.energy - 10)
+      focusTimeMinutes: userStats.focusTimeMinutes + durationMinutes, 
+      energy: Math.max(0, userStats.energy - 10), 
+      streak: newStreak, 
+      lastStudyDate: today 
     };
 
+    // Optimistic update
     setUserStats({ ...userStats, ...updates });
     await dataService.updateUserProfile(authUser.id, updates);
-    await dataService.saveStudySession({ userId: authUser.id, taskName: activeSession?.taskName || 'Battle', durationMinutes, xpEarned, creditsEarned: earnedCredits });
-    
+    await dataService.saveStudySession({ 
+      userId: authUser.id, 
+      taskName: activeSession?.taskName || 'Battle', 
+      durationMinutes, 
+      xpEarned, 
+      creditsEarned: earnedCredits 
+    });
+
     if (updates.focusTimeMinutes >= 60 && !userStats.unlockedBadgeIds.includes('f1')) {
         await dataService.unlockBadge(authUser.id, 'f1');
         setUserStats(prev => prev ? { ...prev, unlockedBadgeIds: [...prev.unlockedBadgeIds, 'f1'] } : null);
         showToast("Achievement Unlocked!", "Focus Spark", "success");
     }
-
     setActiveSession(null);
     setCurrentView(AppView.DASHBOARD);
   };
@@ -219,6 +252,69 @@ export default function App() {
     }
   };
 
+  const showToast = (msg: string, subMsg: string = "", type: 'success' | 'error' = 'success') => {
+    setToast({ message: msg, subMessage: subMsg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleDailyClaim = async () => {
+      if (!userStats || !authUser) return;
+      const now = Date.now();
+      const last = userStats.lastDailyClaim || 0;
+      if (now - last > 86400000) {
+          const rewardCredits = Math.floor(Math.random() * 300) + 200; 
+          const rewardXP = 150;
+          const newCredits = userStats.credits + rewardCredits;
+          const newXP = userStats.xp + rewardXP;
+          const updates = { credits: newCredits, xp: newXP, lastDailyClaim: now, energy: 100 };
+          setUserStats({ ...userStats, ...updates });
+          await dataService.updateUserProfile(authUser.id, updates);
+          showToast("Supply Drop Secured", `+${rewardCredits} CR, +${rewardXP} XP, Energy Refilled`, "success");
+          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
+          audio.volume = 0.4;
+          audio.play().catch(() => {});
+      } else {
+          const nextClaim = new Date(last + 86400000);
+          const diff = nextClaim.getTime() - now;
+          const hours = Math.floor(diff / (1000 * 60 * 60));
+          const mins = Math.floor((diff / (1000 * 60)) % 60);
+          showToast("Protocol Locked", `Next Supply Drop in ${hours}h ${mins}m.`, "error");
+      }
+  };
+
+  const handleLogout = async () => {
+    await authService.logout();
+    setAuthUser(null);
+    setUserStats(null);
+  };
+
+  const handleAddScheduleTask = async (task: ScheduleItem) => {
+    if (!authUser) return;
+    const addedTask = await dataService.addScheduleTask(authUser.id, task);
+    if (addedTask) {
+      const mapped: ScheduleItem = { id: addedTask.id.toString(), title: addedTask.title, startTime: addedTask.start_time, type: addedTask.type, completed: addedTask.completed, strictMode: addedTask.strict_mode };
+      setSchedule(prev => [...prev, mapped]);
+      showToast("Directive Uploaded", "Timeline synchronized.", "success");
+    }
+  };
+
+  const handleRemoveScheduleTask = async (taskId: string) => {
+    await dataService.deleteScheduleTask(taskId);
+    setSchedule(prev => prev.filter(t => t.id !== taskId));
+    showToast("Directive Purged", "Mission timeline updated.", "success");
+  };
+
+  const handleTaskUnlock = async (taskId: string) => {
+    await dataService.updateScheduleTask(taskId, { completed: true });
+    setSchedule(prev => prev.map(t => t.id === taskId ? { ...t, completed: true } : t));
+    setActiveAlarmTask(null);
+    showToast("Neural Lock Disengaged", "Objective completed.", "success");
+  };
+
+  if (showStartupSplash) {
+    return <StartupSplash onFinish={() => setShowStartupSplash(false)} />;
+  }
+
   if (!appInitialized || (authUser && dataLoading)) {
     return (
       <div className="fixed inset-0 bg-cyber-black flex flex-col items-center justify-center">
@@ -233,7 +329,7 @@ export default function App() {
   }
 
   if (showOnboarding) {
-    return <OnboardingFlow onComplete={() => setShowOnboarding(false)} />;
+    return <OnboardingFlow onComplete={handleOnboardingComplete} />;
   }
 
   if (!userStats) return null;
@@ -305,7 +401,14 @@ export default function App() {
               onConsumeItem={async (id) => { setInventory(prev => prev.filter(i => i !== id)); await dataService.consumeItem(authUser.id, id); }}
             />
           )}
-          {currentView === AppView.DUEL && <FocusDuel activeDuel={activeDuel} onDuelUpdate={(duel) => setActiveDuel(duel)} onDuelEnd={() => setActiveDuel(null)} onBack={() => setCurrentView(AppView.DASHBOARD)} />}
+          {currentView === AppView.DUEL && (
+            <FocusDuel 
+              activeDuel={activeDuel} 
+              onDuelUpdate={(duel) => setActiveDuel(duel)} 
+              onDuelEnd={() => setActiveDuel(null)} 
+              onBack={() => setCurrentView(AppView.DASHBOARD)} 
+            />
+          )}
           {currentView === AppView.MARKET && <Marketplace credits={userStats.credits} ownedItemIds={inventory} onPurchase={handlePurchase} />}
           {currentView === AppView.LEADERBOARD && <Leaderboard />}
           {currentView === AppView.PROFILE && <Profile stats={userStats} />}

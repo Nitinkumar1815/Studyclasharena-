@@ -16,6 +16,38 @@ export const MARVEL_RANKS = [
 
 export const getRandomMarvelRank = () => MARVEL_RANKS[Math.floor(Math.random() * MARVEL_RANKS.length)];
 
+// --- GLOBAL PERFORMANCE LOGIC ---
+
+export const PERFORMANCE_TIERS = [
+  { label: 'Recruit', tier: 'D', minScore: 0, color: 'text-gray-400', glow: 'shadow-gray-500/20' },
+  { label: 'Guard', tier: 'C', minScore: 1000, color: 'text-green-400', glow: 'shadow-green-500/20' },
+  { label: 'Warrior', tier: 'B', minScore: 3000, color: 'text-blue-400', glow: 'shadow-blue-500/20' },
+  { label: 'Commander', tier: 'A', minScore: 7000, color: 'text-purple-400', glow: 'shadow-purple-500/20' },
+  { label: 'Elite', tier: 'S', minScore: 15000, color: 'text-yellow-400', glow: 'shadow-yellow-500/20' },
+  { label: 'Master', tier: 'SS', minScore: 30000, color: 'text-cyan-400', glow: 'shadow-cyan-400/20' },
+  { label: 'Legend', tier: 'SSS', minScore: 60000, color: 'text-red-500', glow: 'shadow-red-500/40' },
+];
+
+/**
+ * Calculates a numerical score for "Global Performance"
+ * High emphasis on streak and level to reward long-term consistency.
+ */
+export const calculatePerformanceScore = (stats: UserStats) => {
+  return (stats.focusTimeMinutes * 2) + (stats.streak * 100) + (stats.level * 500) + (stats.xp / 10);
+};
+
+export const getPerformanceTier = (score: number) => {
+  for (let i = PERFORMANCE_TIERS.length - 1; i >= 0; i--) {
+    if (score >= PERFORMANCE_TIERS[i].minScore) {
+      return {
+        ...PERFORMANCE_TIERS[i],
+        next: PERFORMANCE_TIERS[i + 1] || null
+      };
+    }
+  }
+  return { ...PERFORMANCE_TIERS[0], next: PERFORMANCE_TIERS[1] };
+};
+
 export const INITIAL_USER_STATS: UserStats = {
   id: 'guest-operator',
   level: 1,
@@ -46,64 +78,63 @@ export const MARKET_ITEMS: MarketItem[] = [
 ];
 
 export const MOCK_BADGES: Badge[] = [
-  // --- LEVELING (1-10) ---
+  // --- CORE MILESTONES (10) ---
   { id: 'l1', name: 'First Sync', image: '📡', description: 'Linked your neural path for the first time.', rarity: 'Common', acquiredDate: '', requirement: 'Reach Level 1' },
-  { id: 'l2', name: 'Novice Adept', image: '🌱', description: 'Taking the first steps into the arena.', rarity: 'Common', acquiredDate: '', requirement: 'Reach Level 5' },
-  { id: 'l3', name: 'Core Operator', image: '⚙️', description: 'Basic systems fully operational.', rarity: 'Common', acquiredDate: '', requirement: 'Reach Level 10' },
-  { id: 'l4', name: 'Neural Architect', image: '🏗️', description: 'Building the foundation of knowledge.', rarity: 'Rare', acquiredDate: '', requirement: 'Reach Level 25' },
-  { id: 'l5', name: 'Grand Master', image: '👑', description: 'A legend of the StudyClash Arena.', rarity: 'Legendary', acquiredDate: '', requirement: 'Reach Level 50' },
-  { id: 'l6', name: 'Transcendent', image: '🌌', description: 'Beyond mortal study limits.', rarity: 'Artifact', acquiredDate: '', requirement: 'Reach Level 100' },
-  
-  // --- FOCUS TIME (7-15) ---
+  { id: 'l10', name: 'Decade of Power', image: '🔋', description: 'Reached a double-digit clearance level.', rarity: 'Common', acquiredDate: '', requirement: 'Reach Level 10' },
+  { id: 'l25', name: 'Quarter Century', image: '🎖️', description: 'Level 25 clearance confirmed.', rarity: 'Rare', acquiredDate: '', requirement: 'Reach Level 25' },
+  { id: 'l50', name: 'Halfway Hero', image: '🛡️', description: 'You are becoming a legend in the sector.', rarity: 'Rare', acquiredDate: '', requirement: 'Reach Level 50' },
+  { id: 'l75', name: 'Elite Guardian', image: '🦅', description: 'Level 75 reached. System stability high.', rarity: 'Legendary', acquiredDate: '', requirement: 'Reach Level 75' },
+  { id: 'l100', name: 'Grandmaster', image: '👑', description: 'Absolute dominance. Level 100.', rarity: 'Artifact', acquiredDate: '', requirement: 'Reach Level 100' },
   { id: 'f1', name: 'Focus Spark', image: '⚡', description: '1 Hour of intense focus.', rarity: 'Common', acquiredDate: '', requirement: '60m Focus' },
-  { id: 'f2', name: 'Deep Diver', image: '🤿', description: '10 Hours of deep work.', rarity: 'Rare', acquiredDate: '', requirement: '600m Focus' },
-  { id: 'f3', name: 'Chronos King', image: '⏳', description: '50 Hours of focus time.', rarity: 'Rare', acquiredDate: '', requirement: '3000m Focus' },
-  { id: 'f4', name: 'Time Lord', image: '🕰️', description: '100 Hours of mastery.', rarity: 'Legendary', acquiredDate: '', requirement: '6000m Focus' },
-  { id: 'f5', name: 'Eternal Mind', image: '♾️', description: '1000 Hours of total study.', rarity: 'Artifact', acquiredDate: '', requirement: '60000m Focus' },
-  
-  // --- STREAKS (16-25) ---
+  { id: 'f10', name: 'Focus Flame', image: '🔥', description: '10 Hours of deep work logged.', rarity: 'Common', acquiredDate: '', requirement: '600m Focus' },
+  { id: 'f50', name: 'Focus Inferno', image: '🌋', description: '50 Hours. You are unstoppable.', rarity: 'Rare', acquiredDate: '', requirement: '3000m Focus' },
+  { id: 'f100', name: 'Zen Master', image: '🧘', description: '100 Hours of pure silence.', rarity: 'Legendary', acquiredDate: '', requirement: '6000m Focus' },
+
+  // --- STREAK HEROES (10) ---
   { id: 's1', name: 'Ignition', image: '🕯️', description: '3 Day Streak.', rarity: 'Common', acquiredDate: '', requirement: '3 Day Streak' },
-  { id: 's2', name: 'Fire Starter', image: '🔥', description: '7 Day Streak.', rarity: 'Common', acquiredDate: '', requirement: '7 Day Streak' },
-  { id: 's3', name: 'Wildfire', image: '💥', description: '15 Day Streak.', rarity: 'Rare', acquiredDate: '', requirement: '15 Day Streak' },
-  { id: 's4', name: 'Supernova', image: '🌟', description: '30 Day Streak.', rarity: 'Legendary', acquiredDate: '', requirement: '30 Day Streak' },
-  { id: 's5', name: 'Solar Flare', image: '☀️', description: '60 Day Streak.', rarity: 'Legendary', acquiredDate: '', requirement: '60 Day Streak' },
-  { id: 's6', name: 'Century Club', image: '💯', description: '100 Day Streak.', rarity: 'Artifact', acquiredDate: '', requirement: '100 Day Streak' },
+  { id: 's7', name: 'Weekly Warrior', image: '📅', description: 'A full week of discipline.', rarity: 'Common', acquiredDate: '', requirement: '7 Day Streak' },
+  { id: 's14', name: 'Fortnight Fighter', image: '⚔️', description: 'Two weeks of constant growth.', rarity: 'Rare', acquiredDate: '', requirement: '14 Day Streak' },
+  { id: 's30', name: 'Monthly Maven', image: '🌙', description: '30 Days. Habit solidified.', rarity: 'Rare', acquiredDate: '', requirement: '30 Day Streak' },
+  { id: 's60', name: 'Bi-Monthly Boss', image: '🌀', description: '60 Days of excellence.', rarity: 'Rare', acquiredDate: '', requirement: '60 Day Streak' },
+  { id: 's90', name: 'Quarterly Queen', image: '💎', description: '90 Days. Your mind is a diamond.', rarity: 'Legendary', acquiredDate: '', requirement: '90 Day Streak' },
+  { id: 's100', name: 'Century Streak', image: '💯', description: '100 Days. Pure dedication.', rarity: 'Legendary', acquiredDate: '', requirement: '100 Day Streak' },
+  { id: 's180', name: 'Half Year Solstice', image: '🌗', description: '180 Days. Part of the system.', rarity: 'Legendary', acquiredDate: '', requirement: '180 Day Streak' },
+  { id: 's365', name: 'Orbital Master', image: '🌍', description: 'One Year. You have evolved.', rarity: 'Artifact', acquiredDate: '', requirement: '365 Day Streak' },
+  { id: 's1000', name: 'Immortal Mind', image: '♾️', description: '1000 Days. You are a god.', rarity: 'Artifact', acquiredDate: '', requirement: '1000 Day Streak' },
 
-  // --- WEALTH (26-35) ---
+  // --- WEALTH & MARKET (10) ---
   { id: 'w1', name: 'Credit Miner', image: '⛏️', description: 'Earned your first 1000 credits.', rarity: 'Common', acquiredDate: '', requirement: '1000 Credits' },
-  { id: 'w2', name: 'Wealthy Scholar', image: '💰', description: 'Saved 5000 credits.', rarity: 'Rare', acquiredDate: '', requirement: '5000 Credits' },
-  { id: 'w3', name: 'Market Shark', image: '🦈', description: 'Purchased 5 market items.', rarity: 'Rare', acquiredDate: '', requirement: '5 Market Items' },
-  { id: 'w4', name: 'Tycoon', image: '💎', description: 'Total wealth exceeded 100k.', rarity: 'Legendary', acquiredDate: '', requirement: '100k Total Earned' },
+  { id: 'w5', name: 'Silver Stacker', image: '🥈', description: '5000 Credits accumulated.', rarity: 'Common', acquiredDate: '', requirement: '5000 Credits' },
+  { id: 'w10', name: 'Gold Grinder', image: '🥇', description: '10000 Credits. Rich in knowledge.', rarity: 'Rare', acquiredDate: '', requirement: '10000 Credits' },
+  { id: 'w25', name: 'Platinum Pilot', image: '🛸', description: '25000 Credits. High flyer.', rarity: 'Rare', acquiredDate: '', requirement: '25000 Credits' },
+  { id: 'w50', name: 'Emerald Emperor', image: '💹', description: '50000 Credits. Wealthy mind.', rarity: 'Legendary', acquiredDate: '', requirement: '50000 Credits' },
+  { id: 'w100', name: 'Ruby Royal', image: '🧧', description: '100000 Credits. Market influence.', rarity: 'Legendary', acquiredDate: '', requirement: '100000 Credits' },
+  { id: 'w500', name: 'Credit Overlord', image: '🏦', description: '500000 Credits. Sector owner.', rarity: 'Artifact', acquiredDate: '', requirement: '500000 Credits' },
+  { id: 'buy1', name: 'First Gear', image: '⚙️', description: 'Bought your first item.', rarity: 'Common', acquiredDate: '', requirement: 'Buy 1 Item' },
+  { id: 'buy10', name: 'Collector', image: '📦', description: '10 Items owned.', rarity: 'Rare', acquiredDate: '', requirement: 'Buy 10 Items' },
+  { id: 'buyAll', name: 'completionist', image: '🏁', description: 'Owned everything in market.', rarity: 'Legendary', acquiredDate: '', requirement: 'Own All Items' },
 
-  // --- SPECIAL ACTIONS (36-50) ---
-  { id: 'a1', name: 'Bio-Optimizer', image: '🥗', description: 'Checked Bio-Sync 10 times.', rarity: 'Common', acquiredDate: '', requirement: '10 Health Checks' },
-  { id: 'a2', name: 'Zen Master', image: '🧘', description: 'Completed a 10m meditation.', rarity: 'Rare', acquiredDate: '', requirement: '10m Meditation' },
-  { id: 'a3', name: 'Early Bird', image: '🌅', description: 'Studied before 6:00 AM.', rarity: 'Rare', acquiredDate: '', requirement: 'Morning Study' },
-  { id: 'a4', name: 'Night Owl', image: '🦉', description: 'Studied after 12:00 AM.', rarity: 'Rare', acquiredDate: '', requirement: 'Late Night Study' },
-  { id: 'a5', name: 'Duelist', image: '🤺', description: 'Won your first focus duel.', rarity: 'Rare', acquiredDate: '', requirement: '1 Duel Win' },
-  { id: 'a6', name: 'Arena Regular', image: '🏟️', description: 'Participated in 20 battles.', rarity: 'Common', acquiredDate: '', requirement: '20 Battles' },
-  { id: 'a7', name: 'Bookworm', image: '📚', description: 'Tracked 50 unique tasks.', rarity: 'Rare', acquiredDate: '', requirement: '50 Unique Tasks' },
-  { id: 'a8', name: 'Supporter', image: '📦', description: 'Claimed 10 supply drops.', rarity: 'Common', acquiredDate: '', requirement: '10 Claims' },
-  { id: 'a9', name: 'Speed Demon', image: '🏎️', description: 'Finished a 25m session with 0 distractions.', rarity: 'Rare', acquiredDate: '', requirement: 'Perfect 25m' },
-  { id: 'a10', name: 'Tank', image: '🛡️', description: 'Shielded 5 distractions.', rarity: 'Rare', acquiredDate: '', requirement: '5 Shields' },
-  { id: 'a11', name: 'Scholar of Gita', image: '☸️', description: 'Visited Wisdom Shrine 5 times.', rarity: 'Rare', acquiredDate: '', requirement: '5 Wisdom Visits' },
-  { id: 'a12', name: 'Audio Phile', image: '🎵', description: 'Owned all music tracks.', rarity: 'Legendary', acquiredDate: '', requirement: 'All Music' },
-  { id: 'a13', name: 'Perfect Week', image: '📅', description: 'Completed all schedule items in a week.', rarity: 'Legendary', acquiredDate: '', requirement: 'Week Perfect' },
-  { id: 'a14', name: 'God Mode', image: '👾', description: '300m focus in a single day.', rarity: 'Artifact', acquiredDate: '', requirement: '300m Daily' },
-  { id: 'a15', name: 'Socialite', image: '🤝', description: 'Shared 5 achievements.', rarity: 'Common', acquiredDate: '', requirement: '5 Shares' },
-  { id: 'a16', name: 'Neural Diver', image: '🏊', description: 'First 90-minute session.', rarity: 'Rare', acquiredDate: '', requirement: '90m Session' },
-  { id: 'a17', name: 'Battery Full', image: '🔋', description: 'Restored energy to 100% via rest.', rarity: 'Common', acquiredDate: '', requirement: 'Full Energy' },
-  { id: 'a18', name: 'Glitch Fixer', image: '🔧', description: 'Recovered from a 3-breach duel.', rarity: 'Rare', acquiredDate: '', requirement: 'Duel Recovery' },
-  { id: 'a19', name: 'Oracle', image: '👁️', description: 'Used AI Analysis 20 times.', rarity: 'Rare', acquiredDate: '', requirement: '20 AI Consults' },
-  { id: 'a20', name: 'Conqueror', image: '⚔️', description: 'Top 3 on Leaderboard.', rarity: 'Legendary', acquiredDate: '', requirement: 'Top 3' },
-  { id: 'a21', name: 'Master of Dharma', image: '📜', description: 'Unlocked 40 achievements.', rarity: 'Artifact', acquiredDate: '', requirement: '40 Badges' },
-  { id: 'a22', name: 'Hacker', image: '💻', description: 'Scored 10,000 in Neural Breach.', rarity: 'Rare', acquiredDate: '', requirement: '10k Breach' },
-  { id: 'a23', name: 'Elite Guard', image: '💂', description: 'Zero exits in Strict Mode for 5 tasks.', rarity: 'Rare', acquiredDate: '', requirement: '5 Strict Tasks' },
-  { id: 'a24', name: 'Lofi Legend', image: '☕', description: 'Listened to Lofi for 10 hours.', rarity: 'Rare', acquiredDate: '', requirement: '10h Music' },
-  { id: 'a25', name: 'Titan', image: '⛰️', description: 'Level 15 achieved.', rarity: 'Common', acquiredDate: '', requirement: 'Lvl 15' },
-  { id: 'a26', name: 'Commander', image: '🎖️', description: 'Level 30 achieved.', rarity: 'Rare', acquiredDate: '', requirement: 'Lvl 30' },
-  { id: 'a27', name: 'The Chosen One', image: '⚡', description: 'Unlocked a legendary badge.', rarity: 'Rare', acquiredDate: '', requirement: '1 Legendary' },
-  { id: 'a28', name: 'Marathoner', image: '🏃', description: '10,000 total focus minutes.', rarity: 'Legendary', acquiredDate: '', requirement: '10k Minutes' },
-  { id: 'a29', name: 'Daily Warrior', image: '⚔️', description: 'Studied for 21 days straight.', rarity: 'Rare', acquiredDate: '', requirement: '21 Streak' },
-  { id: 'a30', name: 'Cyber Hero', image: '🦸', description: 'Highest rank achieved.', rarity: 'Artifact', acquiredDate: '', requirement: 'Max Rank' }
+  // --- COMBAT & MINI-GAMES (10) ---
+  { id: 'duel1', name: 'First Blood', image: '🩸', description: 'Won your first focus duel.', rarity: 'Common', acquiredDate: '', requirement: 'Win 1 Duel' },
+  { id: 'duel10', name: 'Gladiator', image: '🏟️', description: '10 Duels won.', rarity: 'Rare', acquiredDate: '', requirement: 'Win 10 Duels' },
+  { id: 'duel50', name: 'Arena King', image: '⚔️', description: '50 Duels. Feared in sector.', rarity: 'Legendary', acquiredDate: '', requirement: 'Win 50 Duels' },
+  { id: 'hack1', name: 'Script Kiddie', image: '💻', description: 'First hack complete.', rarity: 'Common', acquiredDate: '', requirement: 'Play Breach once' },
+  { id: 'hack10', name: 'Mainframe Breacher', image: '🗝️', description: '10 Hacks logged.', rarity: 'Rare', acquiredDate: '', requirement: '10 Breach Plays' },
+  { id: 'hackHigh', name: 'Neo', image: '💊', description: 'Scored 5000 in Breach.', rarity: 'Legendary', acquiredDate: '', requirement: 'Breach Score 5k' },
+  { id: 'hackGod', name: 'The Architect', image: '🕶️', description: 'Scored 20000 in Breach.', rarity: 'Artifact', acquiredDate: '', requirement: 'Breach Score 20k' },
+  { id: 'duelPerfect', name: 'Untouchable', image: '👻', description: 'Win duel without losing HP.', rarity: 'Legendary', acquiredDate: '', requirement: 'Flawless Duel' },
+  { id: 'duelLong', name: 'Marathon Dueler', image: '🏃', description: 'Duel lasted over 30 mins.', rarity: 'Rare', acquiredDate: '', requirement: '30m Duel' },
+  { id: 'duelRapid', name: 'Speed Demon', image: '💨', description: 'Won duel in under 5 mins.', rarity: 'Rare', acquiredDate: '', requirement: 'Fast Win' },
+
+  // --- SOCIAL & SYSTEM (10) ---
+  { id: 'daily1', name: 'Supply Receiver', image: '🎁', description: 'Claimed first supply drop.', rarity: 'Common', acquiredDate: '', requirement: '1 Daily Claim' },
+  { id: 'daily30', name: 'Loyal Operator', image: '🫡', description: '30 supply drops claimed.', rarity: 'Rare', acquiredDate: '', requirement: '30 Daily Claims' },
+  { id: 'daily100', name: 'Veteran Operator', image: '🎖️', description: '100 supply drops claimed.', rarity: 'Legendary', acquiredDate: '', requirement: '100 Daily Claims' },
+  { id: 'social1', name: 'Neural Networker', image: '🌐', description: 'Shared your first achievement.', rarity: 'Common', acquiredDate: '', requirement: 'Share 1 Badge' },
+  { id: 'social10', name: 'Influencer', image: '📣', description: 'Shared 10 achievements.', rarity: 'Rare', acquiredDate: '', requirement: 'Share 10 Badges' },
+  { id: 'shrine1', name: 'Wisdom Seeker', image: '🕯️', description: 'Visited the wisdom shrine.', rarity: 'Common', acquiredDate: '', requirement: '1 Shrine Visit' },
+  { id: 'shrine10', name: 'Enlightened', image: '✨', description: 'Received 10 divine guidances.', rarity: 'Rare', acquiredDate: '', requirement: '10 Shrine Visits' },
+  { id: 'skinChange', name: 'Chameleon', image: '🦎', description: 'Changed your neural skin.', rarity: 'Common', acquiredDate: '', requirement: 'Change Skin' },
+  { id: 'nameChange', name: 'Identity Shift', image: '🆔', description: 'Updated your rank/name.', rarity: 'Common', acquiredDate: '', requirement: 'Update Profile' },
+  { id: 'secret1', name: 'Glitch in Matrix', image: '👾', description: 'Found a hidden system message.', rarity: 'Artifact', acquiredDate: '', requirement: 'Secret Action' },
 ];

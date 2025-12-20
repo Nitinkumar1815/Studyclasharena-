@@ -27,13 +27,17 @@ export const dataService = {
       xpToNextLevel: data.xp_to_next_level || 1000,
       credits: data.credits ?? 0,
       streak: data.streak || 0,
-      rank: data.rank || 'Sector Hero', // Removed Novice Recruit
+      rank: data.rank || 'Sector Hero', 
       energy: data.energy ?? 100,
       focusTimeMinutes: data.focus_time_minutes || 0,
       mood: data.mood || 'focus',
       lastDailyClaim: parseInt(data.last_daily_claim || '0'),
       avatar: data.avatar_url || INITIAL_USER_STATS.avatar,
-      unlockedBadgeIds: [] 
+      unlockedBadgeIds: [],
+      sector: data.sector,
+      goal: data.goal,
+      classGrade: data.class_grade,
+      lastStudyDate: data.last_study_date
     };
   },
 
@@ -54,6 +58,10 @@ export const dataService = {
     if (updates.lastDailyClaim !== undefined) dbUpdates.last_daily_claim = updates.lastDailyClaim.toString();
     if (updates.avatar !== undefined) dbUpdates.avatar_url = updates.avatar;
     if (updates.rank !== undefined) dbUpdates.rank = updates.rank;
+    if (updates.sector !== undefined) dbUpdates.sector = updates.sector;
+    if (updates.goal !== undefined) dbUpdates.goal = updates.goal;
+    if (updates.classGrade !== undefined) dbUpdates.class_grade = updates.classGrade;
+    if (updates.lastStudyDate !== undefined) dbUpdates.last_study_date = updates.lastStudyDate;
 
     if (!existing) {
       const { error } = await supabase.from('profiles').insert({ id: userId, ...dbUpdates });
@@ -89,7 +97,15 @@ export const dataService = {
     if (userId === 'guest-operator') return [];
     const { data, error } = await supabase.from('schedule').select('*').eq('user_id', userId);
     if (error) return [];
-    return data.map((t: any) => ({ id: t.id, title: t.title, startTime: t.start_time, type: t.type, completed: t.completed, strict_mode: t.strict_mode }));
+    // Correct mapping from DB fields to ScheduleItem interface
+    return data.map((t: any) => ({ 
+      id: t.id, 
+      title: t.title, 
+      startTime: t.start_time, 
+      type: t.type, 
+      completed: t.completed, 
+      strictMode: t.strict_mode 
+    }));
   },
 
   async addScheduleTask(userId: string, task: ScheduleItem) {

@@ -13,9 +13,12 @@ export interface UserStats {
   avatar: string; // URL to avatar image
   unlockedBadgeIds: string[];
   lastDailyClaim: number; // Timestamp of last daily reward claim
+  lastStudyDate?: string; // YYYY-MM-DD format
+  sector?: string;
+  goal?: string;
+  classGrade?: string;
 }
 
-// --- AUTH TYPES ---
 export interface AuthUser {
   id: string;
   name: string;
