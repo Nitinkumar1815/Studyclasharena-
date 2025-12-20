@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Dashboard } from './components/Dashboard';
 import { BattleArena } from './components/BattleArena';
 import { Leaderboard } from './components/Leaderboard';
@@ -486,6 +487,8 @@ export default function App() {
           ))}
         </div>
       </nav>
+
+      <SpeedInsights />
     </div>
   );
 }
