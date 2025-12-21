@@ -105,13 +105,12 @@ export interface ActiveDuel {
   rivalHP: number;
   sessionTime: number;
   logs: string[];
-  lastSaveTime: number; // Epoch millis for background simulation
+  lastSaveTime: number;
 }
 
 export enum AppView {
   DASHBOARD = 'DASHBOARD',
   BATTLE = 'BATTLE',
-  DUEL = 'DUEL',
   MAP = 'MAP',
   MARKET = 'MARKET',
   LEADERBOARD = 'LEADERBOARD',
@@ -120,7 +119,7 @@ export enum AppView {
   HEALTH = 'HEALTH',
   SCHEDULE = 'SCHEDULE',
   WISDOM = 'WISDOM',
-  RIVAL = 'RIVAL'
+  DUEL = 'DUEL'
 }
 
 export type ThemeMode = 'cyber' | 'zen';

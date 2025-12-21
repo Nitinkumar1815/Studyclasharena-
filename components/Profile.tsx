@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './ui/GlassCard';
 import { MOCK_BADGES } from '../constants';
 import { 
-  Share2, Shield, Cpu, Lock, X, Check, Copy, Download,
-  Loader2, Smartphone, History, Clock, Zap, Coins, Fingerprint, Key, AlertCircle, Trophy, Medal
+  Share2, Shield, Cpu, Lock, X, Check,
+  Loader2, History, Zap, Fingerprint, Key, AlertCircle, Medal, User as UserIcon
 } from 'lucide-react';
 import { UserStats, Badge, StudySession } from '../types';
 import { dataService } from '../services/dataService';
@@ -20,7 +20,6 @@ export const Profile: React.FC<ProfileProps> = ({ stats }) => {
   const [sessionHistory, setSessionHistory] = useState<StudySession[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   
-  // Re-auth State
   const [showReauth, setShowReauth] = useState(false);
   const [reauthPassword, setReauthPassword] = useState("");
   const [reauthLoading, setReauthLoading] = useState(false);
@@ -56,7 +55,6 @@ export const Profile: React.FC<ProfileProps> = ({ stats }) => {
   const handleUnifiedShare = async () => {
     if (!selectedBadge) return;
     setShareStatus('generating');
-    // Simulated share for speed
     setTimeout(() => {
         setShareStatus('copied');
         setTimeout(() => setShareStatus('idle'), 3000);
@@ -65,8 +63,6 @@ export const Profile: React.FC<ProfileProps> = ({ stats }) => {
 
   return (
     <div className="pb-32 animate-in slide-in-from-right duration-500 space-y-10 relative">
-      
-      {/* Identity Re-authentication Modal */}
       {showReauth && (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in zoom-in duration-300">
            <GlassCard className="w-full max-w-sm border-red-500/50 shadow-[0_0_50px_rgba(220,38,38,0.2)] bg-zinc-950 p-8">
@@ -108,7 +104,6 @@ export const Profile: React.FC<ProfileProps> = ({ stats }) => {
         </div>
       )}
 
-      {/* Badge Detail Modal */}
       {selectedBadge && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl animate-in zoom-in duration-200" onClick={() => setSelectedBadge(null)}>
            <GlassCard className="w-full max-w-sm relative border-cyber-neonPurple/50 shadow-[0_0_50px_rgba(188,19,254,0.3)] bg-gray-900" onClick={(e) => e.stopPropagation()}>
@@ -123,14 +118,13 @@ export const Profile: React.FC<ProfileProps> = ({ stats }) => {
         </div>
       )}
 
-      {/* Mastery Section */}
       <div className="relative h-[300px] flex items-center justify-center">
          <div className="absolute bottom-0 w-64 h-24 bg-cyber-neonBlue/10 rounded-[100%] blur-3xl transform rotate-x-[60deg]" />
          <div className="relative z-10 w-48 h-48 animate-float">
             <div className="absolute inset-0 bg-gradient-to-tr from-cyber-black to-cyber-panel rounded-3xl border border-cyber-neonBlue/30 transform rotate-45 flex items-center justify-center overflow-hidden shadow-[0_0_50px_rgba(0,243,255,0.3)]">
                <div className="w-full h-full transform -rotate-45 flex items-center justify-center relative">
-                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-cyber-neonBlue/50 bg-black">
-                     <img src={stats.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-cyber-neonBlue/50 bg-black flex items-center justify-center text-cyber-neonBlue">
+                     <UserIcon size={48} />
                   </div>
                </div>
             </div>
@@ -146,7 +140,6 @@ export const Profile: React.FC<ProfileProps> = ({ stats }) => {
          <button onClick={() => setShowReauth(true)} className="mt-6 text-[10px] text-red-500/60 hover:text-red-500 uppercase tracking-[0.2em] font-mono flex items-center justify-center gap-2 mx-auto transition-colors"><Shield size={12}/> Security Override</button>
       </div>
 
-      {/* Achievement Wall */}
       <div className="space-y-6 px-4 md:px-0">
         <div className="flex items-center justify-between px-2">
           <h2 className="text-xl font-bold text-white flex items-center gap-2 uppercase tracking-widest italic"><Medal className="text-cyber-neonPurple" /> Achievement Wall</h2>
@@ -168,7 +161,6 @@ export const Profile: React.FC<ProfileProps> = ({ stats }) => {
         </div>
       </div>
 
-      {/* Battle History */}
       <div className="space-y-6 px-4 md:px-0">
         <div className="flex items-center justify-between px-2">
            <h2 className="text-xl font-bold text-white flex items-center gap-2 uppercase tracking-widest italic"><History className="text-cyber-neonBlue" /> Neural Logs</h2>

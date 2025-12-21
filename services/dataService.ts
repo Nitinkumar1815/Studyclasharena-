@@ -97,7 +97,6 @@ export const dataService = {
     if (userId === 'guest-operator') return [];
     const { data, error } = await supabase.from('schedule').select('*').eq('user_id', userId);
     if (error) return [];
-    // Correct mapping from DB fields to ScheduleItem interface
     return data.map((t: any) => ({ 
       id: t.id, 
       title: t.title, 
@@ -108,12 +107,30 @@ export const dataService = {
     }));
   },
 
-  async addScheduleTask(userId: string, task: ScheduleItem) {
+  async addScheduleTask(userId: string, task: ScheduleItem): Promise<ScheduleItem | null> {
     if (userId === 'guest-operator') return task;
     const { data, error } = await supabase.from('schedule').insert({
-      user_id: userId, title: task.title, start_time: task.startTime, type: task.type, completed: task.completed, strict_mode: task.strictMode
+      user_id: userId, 
+      title: task.title, 
+      start_time: task.startTime, 
+      type: task.type, 
+      completed: task.completed, 
+      strict_mode: task.strictMode
     }).select().single();
-    return error ? null : data;
+
+    if (error || !data) {
+      console.error('Error adding schedule task:', error);
+      return null;
+    }
+
+    return {
+      id: data.id,
+      title: data.title,
+      startTime: data.start_time,
+      type: data.type,
+      completed: data.completed,
+      strictMode: data.strict_mode
+    };
   },
 
   async updateScheduleTask(taskId: string, updates: Partial<ScheduleItem>) {
@@ -139,9 +156,9 @@ export const dataService = {
   },
 
   async getLeaderboard(): Promise<any[]> {
-    const { data, error } = await supabase.from('profiles').select('id, rank, level, xp, avatar_url').order('xp', { ascending: false }).limit(10);
+    const { data, error } = await supabase.from('profiles').select('id, rank, level, xp').order('xp', { ascending: false }).limit(10);
     if (error) return [];
-    return data.map((p: any) => ({ id: p.id, name: p.rank || 'Sector Hero', level: p.level || 1, xp: p.xp || 0, avatar: p.avatar_url }));
+    return data.map((p: any) => ({ id: p.id, name: p.rank || 'Sector Hero', level: p.level || 1, xp: p.xp || 0 }));
   },
 
   async saveStudySession(session: Omit<StudySession, 'id' | 'timestamp'>) {
