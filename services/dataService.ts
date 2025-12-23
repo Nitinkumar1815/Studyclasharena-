@@ -7,46 +7,56 @@ export const dataService = {
   async getUserProfile(userId: string): Promise<UserStats | null> {
     if (userId === 'guest-operator') return INITIAL_USER_STATS;
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
 
-    if (error) {
-      console.error('Error fetching profile:', error);
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+
+      if (!data) return null; 
+
+      return {
+        id: data.id,
+        level: data.level || 1,
+        xp: data.xp || 0,
+        xpToNextLevel: data.xp_to_next_level || 1000,
+        credits: data.credits ?? 0,
+        streak: data.streak || 0,
+        rank: data.rank || 'Sector Hero', 
+        energy: data.energy ?? 100,
+        focusTimeMinutes: data.focus_time_minutes || 0,
+        mood: data.mood || 'focus',
+        lastDailyClaim: data.last_daily_claim ? parseInt(data.last_daily_claim) : 0,
+        avatar: INITIAL_USER_STATS.avatar,
+        unlockedBadgeIds: [],
+        sector: data.sector,
+        goal: data.goal,
+        classGrade: data.class_grade,
+        lastStudyDate: data.last_study_date
+      };
+    } catch (err) {
+      console.error('Fatal profile fetch error:', err);
       return null;
     }
-
-    if (!data) return null; 
-
-    return {
-      id: data.id,
-      level: data.level || 1,
-      xp: data.xp || 0,
-      xpToNextLevel: data.xp_to_next_level || 1000,
-      credits: data.credits ?? 0,
-      streak: data.streak || 0,
-      rank: data.rank || 'Sector Hero', 
-      energy: data.energy ?? 100,
-      focusTimeMinutes: data.focus_time_minutes || 0,
-      mood: data.mood || 'focus',
-      lastDailyClaim: parseInt(data.last_daily_claim || '0'),
-      avatar: data.avatar_url || INITIAL_USER_STATS.avatar,
-      unlockedBadgeIds: [],
-      sector: data.sector,
-      goal: data.goal,
-      classGrade: data.class_grade,
-      lastStudyDate: data.last_study_date
-    };
   },
 
-  async updateUserProfile(userId: string, updates: Partial<UserStats>) {
+  async updateUserProfile(userId: string, updates: Partial<UserStats>, identity?: { name: string, email: string }) {
     if (userId === 'guest-operator') return;
     
-    const { data: existing } = await supabase.from('profiles').select('id').eq('id', userId).maybeSingle();
+    // Construct database updates with snake_case mapping
+    const dbUpdates: any = { id: userId };
+    
+    // Core identity if available (fixes new user creation errors)
+    if (identity?.name) dbUpdates.full_name = identity.name;
+    if (identity?.email) dbUpdates.email = identity.email;
 
-    const dbUpdates: any = {};
+    // Stat mappings
     if (updates.level !== undefined) dbUpdates.level = updates.level;
     if (updates.xp !== undefined) dbUpdates.xp = updates.xp;
     if (updates.xpToNextLevel !== undefined) dbUpdates.xp_to_next_level = updates.xpToNextLevel;
@@ -56,19 +66,20 @@ export const dataService = {
     if (updates.focusTimeMinutes !== undefined) dbUpdates.focus_time_minutes = updates.focusTimeMinutes;
     if (updates.mood !== undefined) dbUpdates.mood = updates.mood;
     if (updates.lastDailyClaim !== undefined) dbUpdates.last_daily_claim = updates.lastDailyClaim.toString();
-    if (updates.avatar !== undefined) dbUpdates.avatar_url = updates.avatar;
     if (updates.rank !== undefined) dbUpdates.rank = updates.rank;
     if (updates.sector !== undefined) dbUpdates.sector = updates.sector;
     if (updates.goal !== undefined) dbUpdates.goal = updates.goal;
     if (updates.classGrade !== undefined) dbUpdates.class_grade = updates.classGrade;
     if (updates.lastStudyDate !== undefined) dbUpdates.last_study_date = updates.lastStudyDate;
 
-    if (!existing) {
-      const { error } = await supabase.from('profiles').insert({ id: userId, ...dbUpdates });
-      if (error) console.error('Error creating profile:', error);
-    } else {
-      const { error } = await supabase.from('profiles').update(dbUpdates).eq('id', userId);
-      if (error) console.error('Error updating profile:', error);
+    // Use upsert with explicit onConflict to handle first-time creation reliably
+    const { error } = await supabase
+      .from('profiles')
+      .upsert(dbUpdates, { onConflict: 'id' });
+
+    if (error) {
+      console.error('Error saving user profile to DB:', error.message);
+      throw new Error(`Sync Error: ${error.message}`);
     }
   },
 
@@ -85,12 +96,6 @@ export const dataService = {
   async addToInventory(userId: string, itemId: string, itemType: string) {
     if (userId === 'guest-operator') return;
     await supabase.from('inventory').insert({ user_id: userId, item_id: itemId, item_type: itemType });
-  },
-
-  async consumeItem(userId: string, itemId: string) {
-    if (userId === 'guest-operator') return;
-    const { data } = await supabase.from('inventory').select('id').eq('user_id', userId).eq('item_id', itemId).limit(1).maybeSingle();
-    if (data) await supabase.from('inventory').delete().eq('id', data.id);
   },
 
   async getSchedule(userId: string): Promise<ScheduleItem[]> {
@@ -143,29 +148,10 @@ export const dataService = {
     await supabase.from('schedule').delete().eq('id', taskId);
   },
 
-  async getUnlockedBadges(userId: string): Promise<string[]> {
-    if (userId === 'guest-operator') return [];
-    const { data, error } = await supabase.from('user_badges').select('badge_id').eq('user_id', userId);
-    if (error) return [];
-    return data.map((b: any) => b.badge_id);
-  },
-
-  async unlockBadge(userId: string, badgeId: string) {
-    if (userId === 'guest-operator') return;
-    await supabase.from('user_badges').insert({ user_id: userId, badge_id: badgeId });
-  },
-
   async getLeaderboard(): Promise<any[]> {
     const { data, error } = await supabase.from('profiles').select('id, rank, level, xp').order('xp', { ascending: false }).limit(10);
     if (error) return [];
     return data.map((p: any) => ({ id: p.id, name: p.rank || 'Sector Hero', level: p.level || 1, xp: p.xp || 0 }));
-  },
-
-  async saveStudySession(session: Omit<StudySession, 'id' | 'timestamp'>) {
-    if (session.userId === 'guest-operator') return;
-    await supabase.from('study_sessions').insert({
-      user_id: session.userId, task_name: session.taskName, duration_minutes: session.durationMinutes, xp_earned: session.xpEarned, credits_earned: session.creditsEarned
-    });
   },
 
   async getStudySessions(userId: string): Promise<StudySession[]> {

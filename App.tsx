@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { BattleArena } from './components/BattleArena';
 import { Leaderboard } from './components/Leaderboard';
@@ -8,14 +8,16 @@ import { FocusDuel } from './components/FocusDuel';
 import { Profile } from './components/Profile';
 import { HealthTracker } from './components/HealthTracker';
 import { TacticalSchedule } from './components/TacticalSchedule';
-import { WisdomShrine } from './components/WisdomShrine';
 import { SoundscapeControl } from './components/SoundscapeControl';
 import { StartupSplash } from './components/StartupSplash';
 import { AuthScreens } from './components/AuthScreens';
 import { ChronoLock } from './components/ChronoLock';
+import { WisdomShrine } from './components/WisdomShrine';
+import { MeditationArena } from './components/MeditationArena';
+import { QuantumMap } from './components/QuantumMap';
 import { AppView, UserStats, ScheduleItem, ActiveSession, AuthUser, ActiveDuel } from './types';
 import { INITIAL_USER_STATS } from './constants';
-import { LayoutDashboard, Sword, Sun, User as UserIcon, CalendarClock, LogOut, Loader2, Zap } from 'lucide-react';
+import { LayoutDashboard, Sword, User as UserIcon, CalendarClock, LogOut, Loader2, Zap, Sun, Activity, Trophy } from 'lucide-react';
 import { dataService } from './services/dataService';
 import { authService } from './services/authService';
 
@@ -24,6 +26,7 @@ export default function App() {
   const [appInitialized, setAppInitialized] = useState(false);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
   
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
   const [isSoundscapeOpen, setIsSoundscapeOpen] = useState(false);
@@ -40,24 +43,39 @@ export default function App() {
     setTimeout(() => setToast(null), 3500);
   }, []);
 
+  const handleStatsUpdate = async (updates: Partial<UserStats>) => {
+    if (!userStats || !authUser) return;
+    const newStats = { ...userStats, ...updates };
+    setUserStats(newStats);
+    await dataService.updateUserProfile(authUser.id, updates);
+  };
+
   const loadUserData = useCallback(async (user: AuthUser) => {
+    setIsSyncing(true);
     try {
       const [profile, inv, sched] = await Promise.all([
         dataService.getUserProfile(user.id),
         dataService.getInventory(user.id),
         dataService.getSchedule(user.id)
       ]);
-      setUserStats(profile || { ...INITIAL_USER_STATS, id: user.id });
+      const activeStats = profile || { ...INITIAL_USER_STATS, id: user.id };
+      setUserStats(activeStats);
       setInventory(inv.length ? inv : ['m1']);
       setSchedule(sched);
+      if (!profile) await dataService.updateUserProfile(user.id, activeStats, { name: user.name, email: user.email });
       setAppInitialized(true);
-    } catch (err) {
-      console.error("Data fetch error:", err);
-      showToast("Sync Error", "Neural link unstable", "error");
+    } catch (err: any) {
+      setAppInitialized(true);
+    } finally {
+      setIsSyncing(false);
     }
-  }, [showToast]);
+  }, []);
 
-  // Initial Auth Check
+  const handleAuthSuccess = useCallback(async (user: AuthUser) => {
+    setAuthUser(user);
+    await loadUserData(user);
+  }, [loadUserData]);
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -69,60 +87,79 @@ export default function App() {
           setAppInitialized(true);
         }
       } catch (err) {
-        console.error("Initialization fault:", err);
         setAppInitialized(true);
       }
     };
     init();
   }, [loadUserData]);
 
-  // Background Duel Sync
+  // --- BACKGROUND DUEL ENGINE ---
   useEffect(() => {
     let interval: any;
+    const DUEL_TARGET_SECONDS = 25 * 60; // 25 Minutes (1500s)
+
     if (activeDuel && activeDuel.myHP > 0 && activeDuel.rivalHP > 0) {
       interval = setInterval(() => {
         setActiveDuel(prev => {
           if (!prev) return null;
-          const rivalDmg = Math.random() > 0.45 ? 1.5 : 0;
-          const userDmg = Math.random() > 0.88 ? 1.2 : 0;
-          return {
-            ...prev,
-            myHP: Math.max(0, prev.myHP - userDmg),
-            rivalHP: Math.max(0, prev.rivalHP - rivalDmg),
-            sessionTime: prev.sessionTime + 1
-          };
+          
+          const nextTime = prev.sessionTime + 1;
+          let nextRivalHP = 100 - ( (nextTime / DUEL_TARGET_SECONDS) * 100 );
+          const noise = (Math.random() - 0.5) * 0.5;
+          nextRivalHP = Math.max(nextTime >= DUEL_TARGET_SECONDS ? 0 : 0.5, nextRivalHP + noise);
+          const myDamage = Math.random() > 0.99 ? 0.2 : 0; 
+          const nextMyHP = Math.max(1, prev.myHP - myDamage);
+
+          if (nextRivalHP <= 0 && prev.rivalHP > 0) {
+            const xpReward = 150; 
+            const creditReward = 50;
+            handleStatsUpdate({
+              xp: (userStats?.xp || 0) + xpReward,
+              credits: (userStats?.credits || 0) + creditReward,
+              focusTimeMinutes: (userStats?.focusTimeMinutes || 0) + 25
+            });
+            showToast("Duel Victory!", `+${xpReward} XP & +${creditReward} CR - Sector Secured`, "success");
+          } else if (nextMyHP <= 0 && prev.myHP > 0) {
+            handleStatsUpdate({ xp: (userStats?.xp || 0) + 10 });
+            showToast("Duel Defeat", "Focus Integrity Failed", "error");
+          }
+
+          return { ...prev, sessionTime: nextTime, rivalHP: nextRivalHP, myHP: nextMyHP };
         });
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [activeDuel?.id]);
+  }, [activeDuel?.id, activeDuel?.rivalHP, activeDuel?.myHP, userStats?.id]);
 
-  // High-Sensitivity Background Monitor (Strict Protocol Trigger)
+  // --- BACKGROUND STUDY SESSION ENGINE ---
   useEffect(() => {
-    const monitor = setInterval(() => {
-      const now = new Date();
-      const h = now.getHours().toString().padStart(2, '0');
-      const m = now.getMinutes().toString().padStart(2, '0');
-      const currentTime = `${h}:${m}`;
-      
-      const dueStrictTask = schedule.find(task => 
-        task.strictMode && 
-        task.startTime === currentTime && 
-        !task.completed &&
-        (!activeLockTask || activeLockTask.id !== task.id)
-      );
+    let interval: any;
+    if (activeSession && !activeSession.completed) {
+      interval = setInterval(() => {
+        const elapsedSeconds = Math.floor((Date.now() - activeSession.startTime) / 1000);
+        const totalSeconds = activeSession.durationMinutes * 60;
+        
+        if (elapsedSeconds >= totalSeconds) {
+          const xp = activeSession.durationMinutes * 12;
+          const credits = activeSession.durationMinutes * 12;
+          handleStatsUpdate({
+            xp: (userStats?.xp || 0) + xp,
+            credits: (userStats?.credits || 0) + credits,
+            focusTimeMinutes: (userStats?.focusTimeMinutes || 0) + activeSession.durationMinutes
+          });
+          showToast("Session Clear", `+${xp} XP & +${credits} CR extracted`, "success");
+          setActiveSession(prev => prev ? { ...prev, completed: true } : null);
+        }
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [activeSession?.completed, activeSession?.startTime, userStats?.id]);
 
-      if (dueStrictTask) {
-        setActiveLockTask(dueStrictTask);
-      }
-    }, 5000);
-
-    return () => clearInterval(monitor);
-  }, [schedule, activeLockTask]);
-
-  const handleAuthSuccess = (user: AuthUser) => {
-    setAuthUser(user);
-    loadUserData(user);
+  const handleLogout = async () => {
+    await authService.signOut();
+    setAuthUser(null);
+    setUserStats(null);
+    setCurrentView(AppView.DASHBOARD);
   };
 
   const handlePurchase = async (item: any) => {
@@ -131,46 +168,18 @@ export default function App() {
       showToast("Low Balance", "Earn credits in Arena", "error");
       return false;
     }
-    const newCredits = userStats.credits - item.cost;
-    setUserStats({ ...userStats, credits: newCredits });
+    handleStatsUpdate({ credits: userStats.credits - item.cost });
     setInventory([...inventory, item.id]);
     await dataService.addToInventory(authUser.id, item.id, item.type);
-    await dataService.updateUserProfile(authUser.id, { credits: newCredits });
     showToast("Gear Unlocked", item.name, "success");
     return true;
   };
 
-  const handleBattleComplete = async (xp: number, mins: number) => {
-    if (!userStats || !authUser) return;
-    const credits = mins * 12;
-    const updates = {
-      xp: userStats.xp + xp,
-      credits: userStats.credits + credits,
-      focusTimeMinutes: userStats.focusTimeMinutes + mins
-    };
-    setUserStats({ ...userStats, ...updates });
-    await dataService.updateUserProfile(authUser.id, updates);
-    setActiveSession(null);
-    setCurrentView(AppView.DASHBOARD);
-    showToast("Victory!", `+${xp} XP | +${credits} CR`, "success");
-  };
-
   const handleAddSchedule = async (task: ScheduleItem) => {
     if (!authUser) return;
-    
-    // Optimistic Update
     setSchedule(prev => [...prev, task]);
-    
-    try {
-      const addedTask = await dataService.addScheduleTask(authUser.id, task);
-      if (addedTask) {
-        setSchedule(prev => prev.map(t => t.id === task.id ? addedTask : t));
-        showToast("Timeline Sync", "Directive deployed", "success");
-      }
-    } catch (e) {
-      setSchedule(prev => prev.filter(t => t.id !== task.id));
-      showToast("Sync Error", "DB link failed", "error");
-    }
+    await dataService.addScheduleTask(authUser.id, task);
+    showToast("Timeline Sync", "Directive deployed", "success");
   };
 
   const handleRemoveSchedule = async (id: string) => {
@@ -181,27 +190,34 @@ export default function App() {
 
   const handleUnlockStrict = async () => {
     if (activeLockTask) {
-      const updatedSchedule = schedule.map(t => 
-        t.id === activeLockTask.id ? { ...t, completed: true } : t
-      );
-      setSchedule(updatedSchedule);
+      setSchedule(schedule.map(t => t.id === activeLockTask.id ? { ...t, completed: true } : t));
       await dataService.updateScheduleTask(activeLockTask.id, { completed: true });
       setActiveLockTask(null);
-      showToast("Protocol Fulfilled", "Focus maintained", "success");
+      showToast("Protocol Fulfilled", "Focus integrity maintained", "success");
     }
   };
 
   if (showStartupSplash) return <StartupSplash onFinish={() => setShowStartupSplash(false)} />;
-  if (!appInitialized) return <div className="fixed inset-0 bg-black flex items-center justify-center"><Loader2 className="animate-spin text-ios-blue" /></div>;
+  
+  if (!appInitialized || isSyncing) return (
+    <div className="fixed inset-0 bg-black flex flex-col items-center justify-center space-y-4">
+      <Loader2 className="animate-spin text-ios-blue" size={40} />
+      <p className="text-ios-gray font-mono text-[10px] tracking-[0.3em] uppercase">Neural Core Syncing...</p>
+    </div>
+  );
+
   if (!authUser) return <AuthScreens onAuthSuccess={handleAuthSuccess} />;
-  if (!userStats) return null;
+  
+  if (!userStats) return (
+    <div className="fixed inset-0 bg-black flex flex-col items-center justify-center space-y-4">
+      <Loader2 className="animate-spin text-ios-blue" size={40} />
+      <p className="text-ios-gray font-mono text-[10px] tracking-[0.3em] uppercase">Accessing Profile...</p>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-black text-white font-sans antialiased overflow-x-hidden pb-32">
-      {activeLockTask && (
-        <ChronoLock task={activeLockTask} onUnlock={handleUnlockStrict} />
-      )}
-
+      {activeLockTask && <ChronoLock task={activeLockTask} onUnlock={handleUnlockStrict} />}
       {toast && (
         <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[200] w-[90%] max-w-sm animate-spring">
           <div className="glass-ios rounded-[2rem] p-4 flex items-center gap-4 shadow-2xl border-white/10">
@@ -213,52 +229,64 @@ export default function App() {
           </div>
         </div>
       )}
-
-      {activeDuel && currentView !== AppView.DUEL && (
-        <div 
-          onClick={() => setCurrentView(AppView.DUEL)}
-          className="fixed top-24 right-4 z-50 glass-ios rounded-3xl p-3 flex items-center gap-3 border-ios-red/30 animate-pulse ios-tap shadow-2xl"
-        >
-          <div className="w-8 h-8 rounded-full bg-ios-red/20 flex items-center justify-center text-ios-red">
-            <Zap size={16} fill="currentColor" />
-          </div>
-          <div className="pr-2">
-            <p className="text-[9px] font-black uppercase text-ios-red tracking-widest leading-none">In Battle</p>
-            <p className="text-xs font-bold text-white mt-1">{activeDuel.myHP}% HP</p>
-          </div>
-        </div>
-      )}
-
       <SoundscapeControl isOpen={isSoundscapeOpen} onClose={() => setIsSoundscapeOpen(false)} inventory={inventory} />
-
       <main className="max-w-lg mx-auto p-4">
         <header className="flex justify-between items-center py-6 mb-2">
           <div className="flex items-center gap-3 ios-tap" onClick={() => setCurrentView(AppView.DASHBOARD)}>
             <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-black shadow-xl"><Sword size={22} /></div>
             <h1 className="font-black text-lg tracking-tight uppercase italic">Arena</h1>
           </div>
-          <button onClick={() => authService.logout().then(() => setAuthUser(null))} className="w-10 h-10 glass-ios rounded-full flex items-center justify-center text-ios-red ios-tap"><LogOut size={20} /></button>
+          <button onClick={handleLogout} className="w-10 h-10 glass-ios rounded-full flex items-center justify-center text-ios-red ios-tap"><LogOut size={20} /></button>
         </header>
 
         {currentView === AppView.DASHBOARD && <Dashboard stats={userStats} authUser={authUser} activeSession={activeSession} onStartBattle={() => setCurrentView(AppView.BATTLE)} onNavigate={(v) => setCurrentView(v as AppView)} onOpenSoundscape={() => setIsSoundscapeOpen(true)} onDailyClaim={() => {}} />}
-        {currentView === AppView.BATTLE && <BattleArena inventory={inventory} activeSession={activeSession} activeSkin={activeSkin} onSkinChange={setActiveSkin} onSessionStart={setActiveSession} onSessionEnd={() => setActiveSession(null)} onComplete={handleBattleComplete} onExit={() => setCurrentView(AppView.DASHBOARD)} onConsumeItem={(id) => {}} />}
-        {currentView === AppView.DUEL && <FocusDuel activeDuel={activeDuel} onDuelStart={setActiveDuel} onDuelEnd={() => setActiveDuel(null)} onBack={() => setCurrentView(AppView.DASHBOARD)} />}
+        {currentView === AppView.BATTLE && (
+          <BattleArena 
+            inventory={inventory} 
+            activeSession={activeSession} 
+            activeSkin={activeSkin} 
+            onSkinChange={setActiveSkin} 
+            onSessionStart={setActiveSession} 
+            onSessionEnd={() => { setActiveSession(null); setCurrentView(AppView.DASHBOARD); }} 
+            onComplete={() => { setActiveSession(null); setCurrentView(AppView.DASHBOARD); }} 
+            onExit={() => setCurrentView(AppView.DASHBOARD)} 
+            onConsumeItem={(id) => {}} 
+          />
+        )}
+        {currentView === AppView.DUEL && (
+          <FocusDuel 
+            activeDuel={activeDuel} 
+            onDuelStart={setActiveDuel} 
+            onDuelEnd={() => { setActiveDuel(null); setCurrentView(AppView.DASHBOARD); }} 
+            onBack={() => setCurrentView(AppView.DASHBOARD)} 
+          />
+        )}
         {currentView === AppView.MARKET && <Marketplace credits={userStats.credits} ownedItemIds={inventory} onPurchase={handlePurchase} />}
         {currentView === AppView.LEADERBOARD && <Leaderboard />}
         {currentView === AppView.PROFILE && <Profile stats={userStats} />}
         {currentView === AppView.HEALTH && <HealthTracker stats={userStats} onNavigateToExercises={() => setCurrentView(AppView.MEDITATION)} />}
+        {currentView === AppView.MEDITATION && <MeditationArena />}
+        {currentView === AppView.MAP && <QuantumMap />}
         {currentView === AppView.SCHEDULE && <TacticalSchedule schedule={schedule} onAdd={handleAddSchedule} onRemove={handleRemoveSchedule} />}
-        {currentView === AppView.WISDOM && <WisdomShrine />}
+        {currentView === AppView.WISDOM && <WisdomShrine stats={userStats} onUpdateStats={handleStatsUpdate} showToast={showToast} />}
       </main>
 
-      <nav className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-[360px] z-[100]">
-        <div className="glass-ios rounded-[2.5rem] flex justify-around items-center p-2 shadow-2xl border-white/5">
+      <nav className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] z-[100]">
+        <div className="glass-ios rounded-[2.5rem] flex justify-around items-center p-2 shadow-2xl border-white/5 relative">
+          {(activeDuel || activeSession) && (
+            <div className="absolute top-0 right-1/2 translate-x-[4.5rem] -translate-y-2">
+               <div className="flex items-center gap-1 bg-ios-red px-2 py-0.5 rounded-full animate-bounce shadow-lg shadow-ios-red/50">
+                  <Activity size={8} className="text-white" />
+                  <span className="text-[7px] font-black text-white uppercase tracking-tighter">{activeDuel ? 'Duel' : 'Focus'}</span>
+               </div>
+            </div>
+          )}
           {[
             { id: AppView.DASHBOARD, icon: LayoutDashboard },
             { id: AppView.BATTLE, icon: Sword },
+            { id: AppView.WISDOM, icon: Sun },
             { id: AppView.SCHEDULE, icon: CalendarClock },
             { id: AppView.PROFILE, icon: UserIcon },
-            { id: AppView.WISDOM, icon: Sun },
           ].map((item) => (
             <button 
               key={item.id} 

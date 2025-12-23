@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { Zap, X, Disc, Activity, Bluetooth, User, Cpu, ChevronLeft, Trophy, Skull } from 'lucide-react';
+import { Zap, X, Disc, Activity, Bluetooth, User, Cpu, ChevronLeft, Trophy, Skull, LogOut } from 'lucide-react';
 import { ActiveDuel } from '../types';
 
 interface FocusDuelProps {
   onBack: () => void;
   onDuelStart: (duel: ActiveDuel) => void;
-  onDuelEnd: (timeSpent: number) => void;
+  onDuelEnd: () => void;
   activeDuel: ActiveDuel | null;
 }
 
@@ -18,7 +18,10 @@ const COMBAT_LOGS = [
   "Sync rate increasing...",
   "Rival processing capacity dipped.",
   "Flow state engaged.",
-  "Deep work protocols active."
+  "Deep work protocols active.",
+  "Critical focus surge detected!",
+  "Rival firewall breached.",
+  "Analyzing rival patterns..."
 ];
 
 const PremiumRadar = () => (
@@ -37,7 +40,7 @@ const EntityModule = ({ name, hp, isUser, avatar }: { name: string, hp: number, 
   const textColor = isUser ? 'text-ios-blue' : 'text-ios-orange';
 
   return (
-    <div className={`relative w-full max-w-sm glass-ios rounded-3xl p-5 border-white/5 animate-spring`}>
+    <div className={`relative w-full max-w-sm glass-ios rounded-3xl p-5 border-white/5 animate-spring shadow-2xl`}>
        <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-3">
              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border border-white/10 relative">
@@ -64,14 +67,14 @@ const EntityModule = ({ name, hp, isUser, avatar }: { name: string, hp: number, 
 
 export const FocusDuel: React.FC<FocusDuelProps> = ({ onBack, onDuelStart, onDuelEnd, activeDuel }) => {
   const [matchmaking, setMatchmaking] = useState(!activeDuel);
-  const [randomRival, setRandomRival] = useState("");
+  const [currentLog, setCurrentLog] = useState(COMBAT_LOGS[0]);
 
+  // Matchmaking Logic
   useEffect(() => {
-    if (matchmaking) {
+    if (matchmaking && !activeDuel) {
       const timer = setTimeout(() => {
         const name = RIVAL_NAMES[Math.floor(Math.random() * RIVAL_NAMES.length)];
-        setRandomRival(name);
-        onDuelStart({
+        const initialDuel: ActiveDuel = {
           id: Date.now().toString(),
           rivalName: name,
           rivalAvatar: `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${name}`,
@@ -80,12 +83,24 @@ export const FocusDuel: React.FC<FocusDuelProps> = ({ onBack, onDuelStart, onDue
           sessionTime: 0,
           logs: ["Duel initialized."],
           lastSaveTime: Date.now()
-        });
+        };
+        onDuelStart(initialDuel);
         setMatchmaking(false);
       }, 3000);
       return () => clearTimeout(timer);
+    } else if (activeDuel) {
+        setMatchmaking(false);
     }
-  }, [matchmaking]);
+  }, [matchmaking, activeDuel, onDuelStart]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (activeDuel && !matchmaking) {
+        setCurrentLog(COMBAT_LOGS[Math.floor(Math.random() * COMBAT_LOGS.length)]);
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [activeDuel, matchmaking]);
 
   const formatTime = (s: number) => {
     const mins = Math.floor(s / 60);
@@ -98,8 +113,8 @@ export const FocusDuel: React.FC<FocusDuelProps> = ({ onBack, onDuelStart, onDue
       <div className="h-full flex flex-col items-center justify-center p-6 text-center animate-spring py-20">
           <PremiumRadar />
           <div className="mt-12">
-             <h2 className="text-2xl font-bold text-white tracking-widest uppercase">Matching...</h2>
-             <p className="text-ios-gray text-xs font-medium mt-2">Searching Neural Proximity</p>
+             <h2 className="text-2xl font-bold text-white tracking-widest uppercase animate-pulse">Scanning Network...</h2>
+             <p className="text-ios-gray text-xs font-medium mt-2">Connecting to Proximity Duelists</p>
           </div>
           <button onClick={onBack} className="mt-20 glass-ios px-8 py-3 rounded-2xl text-ios-gray font-black text-[10px] uppercase tracking-widest ios-tap">Cancel Signal</button>
       </div>
@@ -114,18 +129,25 @@ export const FocusDuel: React.FC<FocusDuelProps> = ({ onBack, onDuelStart, onDue
   if (isVictory || isDefeat) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-8 text-center animate-spring py-20">
-          <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-8 shadow-2xl ${isVictory ? 'bg-ios-green/20 text-ios-green' : 'bg-ios-red/20 text-ios-red'}`}>
-              {isVictory ? <Trophy size={48} /> : <Skull size={48} />}
+          <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-8 shadow-2xl ${isVictory ? 'bg-ios-green/20 text-ios-green shadow-ios-green/40' : 'bg-ios-red/20 text-ios-red shadow-ios-red/40'}`}>
+              {isVictory ? <Trophy size={48} className="animate-bounce" /> : <Skull size={48} className="animate-pulse" />}
           </div>
           <h1 className="text-4xl font-black mb-2 tracking-tight uppercase italic">{isVictory ? 'Victory' : 'Defeated'}</h1>
-          <p className="text-ios-gray mb-12 text-sm max-w-[240px] mx-auto">
-            {isVictory ? 'Neural dominance confirmed. Rewards synced to core.' : 'Focus integrity lost. System requires recalibration.'}
+          <p className="text-ios-gray mb-12 text-sm max-w-[240px] mx-auto leading-relaxed">
+            {isVictory ? 'Neural dominance confirmed. Rewards have been synced to your profile.' : 'Focus integrity lost. Consolation XP has been added to your profile.'}
           </p>
+          <div className="glass-ios p-6 rounded-3xl w-full mb-8 border-white/5">
+             <div className="text-[10px] font-black uppercase text-ios-gray tracking-widest mb-2">Duel Analytics</div>
+             <div className="flex justify-between text-white font-mono text-sm">
+                <span>Duration: {formatTime(activeDuel.sessionTime)}</span>
+                <span className={isVictory ? "text-ios-green" : "text-ios-red"}>Rewards Synced</span>
+             </div>
+          </div>
           <button 
-            onClick={() => onDuelEnd(activeDuel.sessionTime)} 
-            className="ios-btn-primary w-full py-5 text-lg uppercase tracking-widest font-black"
+            onClick={onDuelEnd} 
+            className="ios-btn-primary w-full py-5 text-lg uppercase tracking-widest font-black ios-tap"
           >
-            Collect Data
+            Back to Dashboard
           </button>
       </div>
     );
@@ -134,9 +156,14 @@ export const FocusDuel: React.FC<FocusDuelProps> = ({ onBack, onDuelStart, onDue
   return (
     <div className="h-full flex flex-col p-2 animate-spring">
         <div className="flex justify-between items-center mb-10">
-            <button onClick={onBack} className="w-10 h-10 glass-ios rounded-full flex items-center justify-center text-ios-gray ios-tap">
-                <ChevronLeft size={20} />
-            </button>
+            <div className="flex items-center gap-2">
+                <button onClick={onBack} className="w-10 h-10 glass-ios rounded-full flex items-center justify-center text-ios-gray ios-tap">
+                    <ChevronLeft size={20} />
+                </button>
+                <button onClick={onDuelEnd} className="w-10 h-10 glass-ios rounded-full flex items-center justify-center text-ios-red ios-tap ml-1">
+                    <LogOut size={18} />
+                </button>
+            </div>
             <div className="flex items-center gap-2 bg-ios-red/10 px-5 py-2 rounded-full border border-ios-red/20">
                 <div className="w-1.5 h-1.5 bg-ios-red rounded-full animate-pulse shadow-[0_0_8px_#FF3B30]" />
                 <span className="text-[10px] font-black text-ios-red tracking-[0.2em] uppercase">Combat Live</span>
@@ -157,26 +184,24 @@ export const FocusDuel: React.FC<FocusDuelProps> = ({ onBack, onDuelStart, onDue
                         strokeWidth="3"
                         strokeDasharray="300"
                         strokeDashoffset={300 - ((activeDuel.sessionTime % 60) / 60) * 300}
-                        className="transition-all duration-1000 ease-linear"
+                        className="transition-all duration-1000 ease-linear shadow-[0_0_10px_#007AFF]"
                      />
                   </svg>
                   <div className="text-center">
-                     <div className="text-5xl font-light tabular-nums tracking-tighter">{formatTime(activeDuel.sessionTime)}</div>
-                     <div className="text-[9px] text-ios-gray uppercase font-black tracking-[0.3em] mt-3">Sync Phase</div>
+                     <div className="text-5xl font-light tabular-nums tracking-tighter text-white">{formatTime(activeDuel.sessionTime)}</div>
+                     <div className="text-[9px] text-ios-gray uppercase font-black tracking-[0.3em] mt-3">Sync Phase Active</div>
                   </div>
                </div>
                
-               <div className="mt-12 h-20 flex flex-col items-center justify-center">
-                  {COMBAT_LOGS.slice(0, 1).map((log, i) => (
-                    <div key={i} className="glass-ios px-6 py-3 rounded-2xl flex items-center gap-3 animate-pulse">
-                        <Activity size={12} className="text-ios-blue" />
-                        <span className="text-[10px] text-white/70 font-bold uppercase tracking-widest">{log}</span>
-                    </div>
-                  ))}
+               <div className="mt-12 h-20 flex flex-col items-center justify-center w-full">
+                  <div className="glass-ios px-6 py-3 rounded-2xl flex items-center gap-3 animate-pulse border-white/5 w-full max-w-[280px]">
+                      <Activity size={12} className="text-ios-blue" />
+                      <span className="text-[10px] text-white/70 font-bold uppercase tracking-widest truncate">{currentLog}</span>
+                  </div>
                </div>
             </div>
 
-            <EntityModule name="You" hp={activeDuel.myHP} isUser />
+            <EntityModule name="Operator" hp={activeDuel.myHP} isUser />
         </div>
     </div>
   );

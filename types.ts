@@ -85,6 +85,7 @@ export interface ActiveSession {
   durationMinutes: number;
   taskName: string;
   activePowerups: string[];
+  completed?: boolean;
 }
 
 export interface StudySession {
@@ -118,8 +119,8 @@ export enum AppView {
   MEDITATION = 'MEDITATION',
   HEALTH = 'HEALTH',
   SCHEDULE = 'SCHEDULE',
-  WISDOM = 'WISDOM',
-  DUEL = 'DUEL'
+  DUEL = 'DUEL',
+  WISDOM = 'WISDOM'
 }
 
 export type ThemeMode = 'cyber' | 'zen';

@@ -2,8 +2,6 @@
   "name": "StudyClash Arena",
   "description": "Futuristic Mobile Study OS",
   "requestFramePermissions": [
-    "microphone",
-    "camera",
     "geolocation"
   ]
 }

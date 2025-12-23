@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, XCircle, Volume2, ChevronLeft, Layout, ShieldCheck, Brain } from 'lucide-react';
+import { Play, Pause, XCircle, Volume2, ChevronLeft, Layout, ShieldCheck } from 'lucide-react';
 import { MARKET_ITEMS } from '../constants';
 import { ActiveSession } from '../types';
 
@@ -11,7 +11,7 @@ interface BattleArenaProps {
   activeSession: ActiveSession | null;
   onSessionStart: (session: ActiveSession) => void;
   onSessionEnd: () => void;
-  onComplete: (xp: number, minutes: number) => void;
+  onComplete: () => void;
   onExit: () => void;
   onConsumeItem: (itemId: string) => void;
 }
@@ -26,18 +26,20 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   const [task, setTask] = useState("");
   const [mode, setMode] = useState<'setup' | 'combat' | 'victory'>('setup');
   
-  const totalTime = sessionDuration * 60;
-  const progress = ((totalTime - timeLeft) / totalTime) * 100;
-
   useEffect(() => {
     if (activeSession) {
-      setMode('combat');
-      setIsActive(true);
-      setTask(activeSession.taskName);
-      const elapsed = Math.floor((Date.now() - activeSession.startTime) / 1000);
-      const remaining = (activeSession.durationMinutes * 60) - elapsed;
-      setTimeLeft(remaining > 0 ? remaining : 0);
-    } else if (mode !== 'victory') {
+      if (activeSession.completed) {
+        setMode('victory');
+        setIsActive(false);
+      } else {
+        setMode('combat');
+        setIsActive(true);
+        setTask(activeSession.taskName);
+        const elapsed = Math.floor((Date.now() - activeSession.startTime) / 1000);
+        const remaining = (activeSession.durationMinutes * 60) - elapsed;
+        setTimeLeft(remaining > 0 ? remaining : 0);
+      }
+    } else {
       setMode('setup');
       setIsActive(false);
     }
@@ -47,7 +49,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     let interval: any;
     if (isActive && timeLeft > 0) {
       interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
-    } else if (timeLeft === 0 && mode === 'combat') {
+    } else if (timeLeft <= 0 && mode === 'combat') {
       setIsActive(false);
       setMode('victory');
     }
@@ -144,6 +146,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   }
 
   if (mode === 'combat') {
+    const progress = Math.min(100, ((sessionDuration * 60 - timeLeft) / (sessionDuration * 60)) * 100);
     return (
       <div className="h-full flex flex-col items-center justify-between py-10 animate-spring">
         <div className="text-center px-6">
@@ -188,12 +191,12 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           <ShieldCheck size={48} className="text-ios-green" />
        </div>
        <h2 className="text-4xl font-black mb-2 uppercase tracking-tighter italic">Mission Clear</h2>
-       <p className="text-ios-gray mb-12 text-sm max-w-[240px]">Strategic focus maintained. Neural experience points successfully calculated.</p>
+       <p className="text-ios-gray mb-12 text-sm max-w-[240px]">Strategic focus maintained. Rewards have been added to your profile.</p>
        <button 
-         onClick={() => onComplete(sessionDuration * 12, sessionDuration)}
+         onClick={onComplete}
          className="ios-btn-primary w-full py-5 text-xl font-black uppercase tracking-[0.2em] ios-tap"
        >
-         Extract Rewards
+         Back to Dashboard
        </button>
     </div>
   );

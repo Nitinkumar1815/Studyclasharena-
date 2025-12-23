@@ -190,10 +190,7 @@ export const MOCK_BADGES: Badge[] = [
   { id: 'daily30', name: 'Loyal Operator', image: '🫡', description: '30 supply drops claimed.', rarity: 'Rare', acquiredDate: '', requirement: '30 Daily Claims' },
   { id: 'daily100', name: 'Veteran Operator', image: '🎖️', description: '100 supply drops claimed.', rarity: 'Legendary', acquiredDate: '', requirement: '100 Daily Claims' },
   { id: 'social1', name: 'Neural Networker', image: '🌐', description: 'Shared your first achievement.', rarity: 'Common', acquiredDate: '', requirement: 'Share 1 Badge' },
-  // Fixed property name from 'icon' to 'image' to match Badge interface definition
   { id: 'social10', name: 'Influencer', image: '📣', description: 'Shared 10 achievements.', rarity: 'Rare', acquiredDate: '', requirement: 'Share 10 Badges' },
-  { id: 'shrine1', name: 'Wisdom Seeker', image: '🕯️', description: 'Visited the wisdom shrine.', rarity: 'Common', acquiredDate: '', requirement: '1 Shrine Visit' },
-  { id: 'shrine10', name: 'Enlightened', image: '✨', description: 'Received 10 divine guidances.', rarity: 'Rare', acquiredDate: '', requirement: '10 Shrine Visits' },
   { id: 'skinChange', name: 'Chameleon', image: '🦎', description: 'Changed your neural skin.', rarity: 'Common', acquiredDate: '', requirement: 'Change Skin' },
   { id: 'nameChange', name: 'Identity Shift', image: '🆔', description: 'Updated your rank/name.', rarity: 'Common', acquiredDate: '', requirement: 'Update Profile' },
   { id: 'secret1', name: 'Glitch in Matrix', image: '👾', description: 'Found a hidden system message.', rarity: 'Artifact', acquiredDate: '', requirement: 'Secret Action' },

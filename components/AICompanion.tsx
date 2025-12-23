@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from "@google/genai";
 import { Mic, Minimize2, Radio, Bot, Send, X, Volume2, MicOff, Activity, Zap } from 'lucide-react';
 import { ChatMessage, UserStats } from '../types';
@@ -11,6 +12,47 @@ interface ArenaCoreProps {
 }
 
 // --- AUDIO UTILITIES ---
+// Manual base64 decode implementation following coding guidelines.
+function decode(base64: string) {
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+// Manual base64 encode implementation following coding guidelines.
+function encode(bytes: Uint8Array) {
+  let binary = '';
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+// Manual audio decoding for raw PCM data following guidelines.
+async function decodeAudioData(
+  data: Uint8Array,
+  ctx: AudioContext,
+  sampleRate: number,
+  numChannels: number,
+): Promise<AudioBuffer> {
+  const dataInt16 = new Int16Array(data.buffer);
+  const frameCount = dataInt16.length / numChannels;
+  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
+
+  for (let channel = 0; channel < numChannels; channel++) {
+    const channelData = buffer.getChannelData(channel);
+    for (let i = 0; i < frameCount; i++) {
+      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
+    }
+  }
+  return buffer;
+}
+
 function floatTo16BitPCM(input: Float32Array) {
   const output = new Int16Array(input.length);
   for (let i = 0; i < input.length; i++) {
@@ -18,25 +60,6 @@ function floatTo16BitPCM(input: Float32Array) {
     output[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
   }
   return output;
-}
-
-function base64ToUint8Array(base64: string) {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
-
-function arrayBufferToBase64(buffer: ArrayBuffer) {
-  let binary = '';
-  const bytes = new Uint8Array(buffer);
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
 }
 
 export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) => {
@@ -60,7 +83,7 @@ export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) 
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const inputSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const nextStartTimeRef = useRef<number>(0);
-  const sessionRef = useRef<any>(null); // To hold the active session promise/object
+  const sessionRef = useRef<any>(null);
 
   // --- TEXT CHAT LOGIC ---
   useEffect(() => {
@@ -74,11 +97,11 @@ export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) 
         }
       ]);
     }
-  }, [isOpen, mode]);
+  }, [isOpen, mode, stats.rank, messages.length]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, mode]);
+  }, [messages]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -114,15 +137,21 @@ export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) 
     try {
       const apiKey = process.env.API_KEY;
       if (!apiKey) {
-        alert("API Key missing");
+        console.error("API Key missing from environment");
         return;
       }
 
-      const client = new GoogleGenAI({ apiKey });
+      // Initialize GenAI client with correct parameter structure.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
-      // 1. Setup Audio Contexts
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      const audioCtx = new AudioContext({ sampleRate: 24000 }); // Output rate
+      // 1. Setup Audio Contexts (Fixed constructor pattern)
+      const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) {
+        console.error("AudioContext not supported in this environment");
+        return;
+      }
+
+      const audioCtx = new AudioContextClass({ sampleRate: 24000 });
       audioContextRef.current = audioCtx;
       nextStartTimeRef.current = audioCtx.currentTime;
 
@@ -131,7 +160,7 @@ export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) 
       mediaStreamRef.current = stream;
 
       // 3. Connect to Gemini Live
-      const sessionPromise = client.live.connect({
+      const sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         config: {
           responseModalities: [Modality.AUDIO],
@@ -146,24 +175,19 @@ export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) 
             setIsConnected(true);
           },
           onmessage: async (msg: LiveServerMessage) => {
-            // Handle Audio Output
             const base64Audio = msg.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
             if (base64Audio && audioContextRef.current) {
-              const audioData = base64ToUint8Array(base64Audio);
-              
-              // Simple visualization hook (fake volume based on chunk size)
-              setVolumeLevel(Math.min(100, audioData.length / 100));
+              const audioBytes = decode(base64Audio);
+              setVolumeLevel(Math.min(100, audioBytes.length / 100));
               setTimeout(() => setVolumeLevel(0), 200);
 
-              // Convert PCM Int16 -> Float32 for playback
-              const int16 = new Int16Array(audioData.buffer);
-              const float32 = new Float32Array(int16.length);
-              for(let i=0; i<int16.length; i++) {
-                float32[i] = int16[i] / 32768.0;
-              }
-
-              const buffer = audioContextRef.current.createBuffer(1, float32.length, 24000);
-              buffer.getChannelData(0).set(float32);
+              // Correct decoding for raw PCM audio stream.
+              const buffer = await decodeAudioData(
+                audioBytes,
+                audioContextRef.current,
+                24000,
+                1
+              );
 
               const source = audioContextRef.current.createBufferSource();
               source.buffer = buffer;
@@ -190,24 +214,22 @@ export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) 
       sessionRef.current = sessionPromise;
 
       // 4. Setup Audio Recorder (Input)
-      // We need a separate context for input to ensure 16kHz if possible, or downsample
-      const inputCtx = new AudioContext({ sampleRate: 16000 });
+      const inputCtx = new AudioContextClass({ sampleRate: 16000 });
       const source = inputCtx.createMediaStreamSource(stream);
       const processor = inputCtx.createScriptProcessor(4096, 1, 1);
       
       processor.onaudioprocess = (e) => {
-        if (!isMicOn) return; // Mute logic
+        if (!isMicOn) return;
         
         const inputData = e.inputBuffer.getChannelData(0);
-        // Visualizer for input
         const vol = inputData.reduce((acc, val) => acc + Math.abs(val), 0) / inputData.length;
         if (vol > 0.01) setVolumeLevel(Math.min(100, vol * 500));
 
-        // Convert to 16-bit PCM
         const pcm16 = floatTo16BitPCM(inputData);
-        const base64 = arrayBufferToBase64(pcm16.buffer);
+        // Manual encoding for streaming PCM input.
+        const base64 = encode(new Uint8Array(pcm16.buffer));
 
-        // Send to Gemini
+        // Solely rely on sessionPromise resolves to send realtime input.
         sessionPromise.then(session => {
              session.sendRealtimeInput({
                  media: {
@@ -226,24 +248,15 @@ export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) 
 
     } catch (e) {
       console.error("Failed to start live session", e);
-      alert("Could not connect to Neural Core (Live API).");
     }
   };
 
   const stopLiveSession = () => {
     setIsConnected(false);
-    
-    // Stop Tracks
     mediaStreamRef.current?.getTracks().forEach(track => track.stop());
-    
-    // Disconnect Nodes
     processorRef.current?.disconnect();
     inputSourceRef.current?.disconnect();
-    
-    // Close Contexts
     audioContextRef.current?.close();
-
-    // Reset Refs
     mediaStreamRef.current = null;
     processorRef.current = null;
     inputSourceRef.current = null;
@@ -251,7 +264,6 @@ export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) 
     nextStartTimeRef.current = 0;
   };
 
-  // Cleanup on unmount or close
   useEffect(() => {
     if (!isOpen) {
         stopLiveSession();
@@ -287,7 +299,6 @@ export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) 
         </div>
         
         <div className="flex items-center gap-2 relative z-10">
-            {/* Mode Toggle */}
             <div className="flex bg-black/50 rounded-lg p-1 border border-white/10">
                 <button 
                     onClick={() => {
@@ -312,10 +323,8 @@ export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) 
         </div>
       </div>
 
-      {/* --- LIVE MODE UI --- */}
       {mode === 'LIVE' && (
           <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
-             {/* Background Effects */}
              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-900/20 via-black to-black" />
              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,0,0,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,0,0,0.05)_1px,transparent_1px)] bg-[size:20px_20px]" />
 
@@ -337,7 +346,6 @@ export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) 
                  </div>
              ) : (
                  <div className="flex flex-col items-center justify-between h-full w-full py-12 z-10">
-                     {/* Visualizer */}
                      <div className="relative w-48 h-48 flex items-center justify-center">
                          <div 
                             className="absolute inset-0 bg-red-500/20 rounded-full blur-xl transition-all duration-100"
@@ -349,8 +357,6 @@ export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) 
                          >
                             <Mic size={48} className={`text-white transition-opacity ${isMicOn ? 'opacity-100' : 'opacity-50'}`} />
                          </div>
-                         
-                         {/* Orbitals */}
                          <div className="absolute inset-[-20px] border border-red-500/30 rounded-full animate-[spin_4s_linear_infinite]" />
                          <div className="absolute inset-[-40px] border border-red-500/20 rounded-full animate-[spin_8s_linear_infinite_reverse]" />
                      </div>
@@ -364,7 +370,6 @@ export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) 
                         </div>
                      </div>
 
-                     {/* Controls */}
                      <div className="flex items-center gap-6">
                         <button 
                             onClick={toggleMic}
@@ -372,7 +377,6 @@ export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) 
                         >
                             {isMicOn ? <Mic size={24} /> : <MicOff size={24} />}
                         </button>
-                        
                         <button 
                             onClick={stopLiveSession}
                             className="p-6 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-[0_0_30px_rgba(220,38,38,0.5)] transition-transform hover:scale-110"
@@ -385,7 +389,6 @@ export const ArenaCore: React.FC<ArenaCoreProps> = ({ isOpen, onClose, stats }) 
           </div>
       )}
 
-      {/* --- TEXT MODE UI --- */}
       {mode === 'TEXT' && (
         <>
             <div className="flex-1 overflow-y-auto p-4 space-y-4 relative z-10 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]">

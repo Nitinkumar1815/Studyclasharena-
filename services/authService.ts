@@ -85,7 +85,8 @@ export const authService = {
     return { success: true, message: "Verification challenge sent to your email." };
   },
 
-  logout: async () => {
+  // Fixed: Renamed from logout to signOut to resolve the property access error in App.tsx.
+  signOut: async () => {
     await supabase.auth.signOut();
   },
 
