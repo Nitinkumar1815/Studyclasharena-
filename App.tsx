@@ -16,7 +16,7 @@ import { WisdomShrine } from './components/WisdomShrine';
 import { MeditationArena } from './components/MeditationArena';
 import { QuantumMap } from './components/QuantumMap';
 import { AppView, UserStats, ScheduleItem, ActiveSession, AuthUser, ActiveDuel } from './types';
-import { INITIAL_USER_STATS } from './constants';
+import { INITIAL_USER_STATS, getRandomMarvelRank } from './constants';
 import { LayoutDashboard, Sword, User as UserIcon, CalendarClock, LogOut, Loader2, Zap, Sun, Activity, Trophy } from 'lucide-react';
 import { dataService } from './services/dataService';
 import { authService } from './services/authService';
@@ -58,11 +58,26 @@ export default function App() {
         dataService.getInventory(user.id),
         dataService.getSchedule(user.id)
       ]);
-      const activeStats = profile || { ...INITIAL_USER_STATS, id: user.id };
+      
+      // If no profile, generate a fresh one with a random Marvel rank
+      const activeStats = profile || { 
+        ...INITIAL_USER_STATS, 
+        id: user.id,
+        rank: getRandomMarvelRank() 
+      };
+      
       setUserStats(activeStats);
       setInventory(inv.length ? inv : ['m1']);
       setSchedule(sched);
-      if (!profile) await dataService.updateUserProfile(user.id, activeStats, { name: user.name, email: user.email });
+      
+      // If it was a new user, save the generated rank to the DB
+      if (!profile) {
+        await dataService.updateUserProfile(user.id, activeStats, { 
+          name: user.name, 
+          email: user.email 
+        });
+      }
+      
       setAppInitialized(true);
     } catch (err: any) {
       setAppInitialized(true);

@@ -52,7 +52,7 @@ export const INITIAL_USER_STATS: UserStats = {
   streak: 0,
   energy: 100,
   focusTimeMinutes: 0,
-  rank: "Sector Hero",
+  rank: getRandomMarvelRank(), 
   credits: 0, 
   mood: 'focus',
   avatar: "https://api.dicebear.com/9.x/bottts/svg?seed=operator",
@@ -137,7 +137,7 @@ export const MARKET_ITEMS: MarketItem[] = [
 ];
 
 export const MOCK_BADGES: Badge[] = [
-  // --- CORE MILESTONES (10) ---
+  // ... (badges remain same)
   { id: 'l1', name: 'First Sync', image: '📡', description: 'Linked your neural path for the first time.', rarity: 'Common', acquiredDate: '', requirement: 'Reach Level 1' },
   { id: 'l10', name: 'Decade of Power', image: '🔋', description: 'Reached a double-digit clearance level.', rarity: 'Common', acquiredDate: '', requirement: 'Reach Level 10' },
   { id: 'l25', name: 'Quarter Century', image: '🎖️', description: 'Level 25 clearance confirmed.', rarity: 'Rare', acquiredDate: '', requirement: 'Reach Level 25' },
@@ -148,8 +148,6 @@ export const MOCK_BADGES: Badge[] = [
   { id: 'f10', name: 'Focus Flame', image: '🔥', description: '10 Hours of deep work logged.', rarity: 'Common', acquiredDate: '', requirement: '600m Focus' },
   { id: 'f50', name: 'Focus Inferno', image: '🌋', description: '50 Hours. You are unstoppable.', rarity: 'Rare', acquiredDate: '', requirement: '3000m Focus' },
   { id: 'f100', name: 'Zen Master', image: '🧘', description: '100 Hours of pure silence.', rarity: 'Legendary', acquiredDate: '', requirement: '6000m Focus' },
-
-  // --- STREAK HEROES (10) ---
   { id: 's1', name: 'Ignition', image: '🕯️', description: '3 Day Streak.', rarity: 'Common', acquiredDate: '', requirement: '3 Day Streak' },
   { id: 's7', name: 'Weekly Warrior', image: '📅', description: 'A full week of discipline.', rarity: 'Common', acquiredDate: '', requirement: '7 Day Streak' },
   { id: 's14', name: 'Fortnight Fighter', image: '⚔️', description: 'Two weeks of constant growth.', rarity: 'Rare', acquiredDate: '', requirement: '14 Day Streak' },
@@ -160,8 +158,6 @@ export const MOCK_BADGES: Badge[] = [
   { id: 's180', name: 'Half Year Solstice', image: '🌗', description: '180 Days. Part of the system.', rarity: 'Legendary', acquiredDate: '', requirement: '180 Day Streak' },
   { id: 's365', name: 'Orbital Master', image: '🌍', description: 'One Year. You have evolved.', rarity: 'Artifact', acquiredDate: '', requirement: '365 Day Streak' },
   { id: 's1000', name: 'Immortal Mind', image: '♾️', description: '1000 Days. You are a god.', rarity: 'Artifact', acquiredDate: '', requirement: '1000 Day Streak' },
-
-  // --- WEALTH & MARKET (10) ---
   { id: 'w1', name: 'Credit Miner', image: '⛏️', description: 'Earned your first 1000 credits.', rarity: 'Common', acquiredDate: '', requirement: '1000 Credits' },
   { id: 'w5', name: 'Silver Stacker', image: '🥈', description: '5000 Credits accumulated.', rarity: 'Common', acquiredDate: '', requirement: '5000 Credits' },
   { id: 'w10', name: 'Gold Grinder', image: '🥇', description: '10000 Credits. Rich in knowledge.', rarity: 'Rare', acquiredDate: '', requirement: '10000 Credits' },
@@ -172,8 +168,6 @@ export const MOCK_BADGES: Badge[] = [
   { id: 'buy1', name: 'First Gear', image: '⚙️', description: 'Bought your first item.', rarity: 'Common', acquiredDate: '', requirement: 'Buy 1 Item' },
   { id: 'buy10', name: 'Collector', image: '📦', description: '10 Items owned.', rarity: 'Rare', acquiredDate: '', requirement: 'Buy 10 Items' },
   { id: 'buyAll', name: 'completionist', image: '🏁', description: 'Owned everything in market.', rarity: 'Legendary', acquiredDate: '', requirement: 'Own All Items' },
-
-  // --- COMBAT & MINI-GAMES (10) ---
   { id: 'duel1', name: 'First Blood', image: '🩸', description: 'Won your first focus duel.', rarity: 'Common', acquiredDate: '', requirement: 'Win 1 Duel' },
   { id: 'duel10', name: 'Gladiator', image: '🏟️', description: '10 Duels won.', rarity: 'Rare', acquiredDate: '', requirement: 'Win 10 Duels' },
   { id: 'duel50', name: 'Arena King', image: '⚔️', description: '50 Duels. Feared in sector.', rarity: 'Legendary', acquiredDate: '', requirement: 'Win 50 Duels' },
@@ -184,8 +178,6 @@ export const MOCK_BADGES: Badge[] = [
   { id: 'duelPerfect', name: 'Untouchable', image: '👻', description: 'Win duel without losing HP.', rarity: 'Legendary', acquiredDate: '', requirement: 'Flawless Duel' },
   { id: 'duelLong', name: 'Marathon Dueler', image: '🏃', description: 'Duel lasted over 30 mins.', rarity: 'Rare', acquiredDate: '', requirement: '30m Duel' },
   { id: 'duelRapid', name: 'Speed Demon', image: '💨', description: 'Won duel in under 5 mins.', rarity: 'Rare', acquiredDate: '', requirement: 'Fast Win' },
-
-  // --- SOCIAL & SYSTEM (10) ---
   { id: 'daily1', name: 'Supply Receiver', image: '🎁', description: 'Claimed first supply drop.', rarity: 'Common', acquiredDate: '', requirement: '1 Daily Claim' },
   { id: 'daily30', name: 'Loyal Operator', image: '🫡', description: '30 supply drops claimed.', rarity: 'Rare', acquiredDate: '', requirement: '30 Daily Claims' },
   { id: 'daily100', name: 'Veteran Operator', image: '🎖️', description: '100 supply drops claimed.', rarity: 'Legendary', acquiredDate: '', requirement: '100 Daily Claims' },
