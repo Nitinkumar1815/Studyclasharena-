@@ -60,7 +60,6 @@ export default function App() {
         dataService.getSchedule(user.id)
       ]);
       
-      // If no profile, generate a fresh one with a random Marvel rank
       const activeStats = profile || { 
         ...INITIAL_USER_STATS, 
         id: user.id,
@@ -71,7 +70,6 @@ export default function App() {
       setInventory(inv.length ? inv : ['m1']);
       setSchedule(sched);
       
-      // If it was a new user, save the generated rank to the DB
       if (!profile) {
         await dataService.updateUserProfile(user.id, activeStats, { 
           name: user.name, 
@@ -109,10 +107,9 @@ export default function App() {
     init();
   }, [loadUserData]);
 
-  // --- BACKGROUND DUEL ENGINE ---
   useEffect(() => {
     let interval: any;
-    const DUEL_TARGET_SECONDS = 25 * 60; // 25 Minutes (1500s)
+    const DUEL_TARGET_SECONDS = 25 * 60;
 
     if (activeDuel && activeDuel.myHP > 0 && activeDuel.rivalHP > 0) {
       interval = setInterval(() => {
@@ -147,7 +144,6 @@ export default function App() {
     return () => clearInterval(interval);
   }, [activeDuel?.id, activeDuel?.rivalHP, activeDuel?.myHP, userStats?.id]);
 
-  // --- BACKGROUND STUDY SESSION ENGINE ---
   useEffect(() => {
     let interval: any;
     if (activeSession && !activeSession.completed) {
@@ -252,7 +248,15 @@ export default function App() {
             <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-black shadow-xl"><Sword size={22} /></div>
             <h1 className="font-black text-lg tracking-tight uppercase italic">Arena</h1>
           </div>
-          <button onClick={handleLogout} className="w-10 h-10 glass-ios rounded-full flex items-center justify-center text-ios-red ios-tap"><LogOut size={20} /></button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setCurrentView(AppView.ABOUT)} 
+              className={`w-10 h-10 glass-ios rounded-full flex items-center justify-center transition-colors ios-tap ${currentView === AppView.ABOUT ? 'text-ios-blue bg-white/10' : 'text-white/60'}`}
+            >
+              <Info size={20} />
+            </button>
+            <button onClick={handleLogout} className="w-10 h-10 glass-ios rounded-full flex items-center justify-center text-ios-red ios-tap"><LogOut size={20} /></button>
+          </div>
         </header>
 
         {currentView === AppView.DASHBOARD && <Dashboard stats={userStats} authUser={authUser} activeSession={activeSession} onStartBattle={() => setCurrentView(AppView.BATTLE)} onNavigate={(v) => setCurrentView(v as AppView)} onOpenSoundscape={() => setIsSoundscapeOpen(true)} onDailyClaim={() => {}} />}
@@ -301,7 +305,7 @@ export default function App() {
           {[
             { id: AppView.DASHBOARD, icon: LayoutDashboard },
             { id: AppView.BATTLE, icon: Sword },
-            { id: AppView.ABOUT, icon: Info },
+            { id: AppView.WISDOM, icon: Sun },
             { id: AppView.SCHEDULE, icon: CalendarClock },
             { id: AppView.PROFILE, icon: UserIcon },
           ].map((item) => (
