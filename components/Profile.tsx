@@ -75,13 +75,16 @@ export const Profile: React.FC<ProfileProps> = ({ stats }) => {
               </div>
 
               <div className="space-y-4">
+                 <p className="text-[10px] text-center text-white/40 uppercase tracking-widest leading-relaxed">
+                   Enter your login password to authorize security override.
+                 </p>
                  <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
                        <Key size={16} />
                     </div>
                     <input 
                        type="password" 
-                       placeholder="Operator Password"
+                       placeholder="Your Account Password"
                        className="w-full bg-black/60 border border-white/10 rounded-xl py-4 pl-10 pr-4 text-white font-mono focus:border-red-500 outline-none transition-all"
                        value={reauthPassword}
                        onChange={(e) => setReauthPassword(e.target.value)}
@@ -112,7 +115,7 @@ export const Profile: React.FC<ProfileProps> = ({ stats }) => {
                  <div className="text-7xl filter drop-shadow-[0_0_20px_rgba(188,19,254,0.5)] animate-float mb-4">{selectedBadge.image}</div>
                  <div><h2 className="text-xl font-bold text-white uppercase tracking-widest">{selectedBadge.name}</h2><span className={`text-[10px] px-2 py-0.5 rounded border uppercase mt-2 inline-block ${selectedBadge.rarity === 'Legendary' ? 'border-yellow-500 text-yellow-500' : selectedBadge.rarity === 'Artifact' ? 'border-red-500 text-red-500' : selectedBadge.rarity === 'Rare' ? 'border-cyber-neonBlue text-cyber-neonBlue' : 'border-gray-500 text-gray-400'}`}>{selectedBadge.rarity}</span></div>
                  <div className="bg-black/60 p-5 rounded-2xl border border-white/5 w-full"><p className="text-gray-300 text-sm mb-4 leading-relaxed">{selectedBadge.description}</p><div className="text-[10px] text-gray-500 font-mono border-t border-white/5 pt-3 mt-2 uppercase tracking-widest">Requirement: {selectedBadge.requirement}</div>{stats.unlockedBadgeIds.includes(selectedBadge.id) ? (<div className="text-[10px] text-green-500 font-mono mt-2 flex items-center justify-center gap-1 uppercase tracking-widest"><Check size={12} /> Status: Unlocked</div>) : (<div className="text-[10px] text-red-500 font-mono mt-2 flex items-center justify-center gap-1 uppercase tracking-widest"><Lock size={12} /> Status: Encrypted</div>)}</div>
-                 {stats.unlockedBadgeIds.includes(selectedBadge.id) && (<div className="w-full"><button onClick={handleUnifiedShare} className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:scale-[1.02] shadow-[0_0_15px_rgba(188,19,254,0.3)] ${shareStatus === 'copied' ? 'bg-green-500 text-black' : 'bg-cyber-neonPurple text-white'}`}>{shareStatus === 'generating' ? <Loader2 size={18} className="animate-spin" /> : shareStatus === 'copied' ? <Check size={18} /> : <Share2 size={18} />} {shareStatus === 'copied' ? "Copied" : "Share Achievement"}</button></div>)}
+                 {stats.unlockedBadgeIds.includes(selectedBadge.id) && (<div className="w-full"><button handleUnifiedShare className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:scale-[1.02] shadow-[0_0_15px_rgba(188,19,254,0.3)] ${shareStatus === 'copied' ? 'bg-green-500 text-black' : 'bg-cyber-neonPurple text-white'}`}>{shareStatus === 'generating' ? <Loader2 size={18} className="animate-spin" /> : shareStatus === 'copied' ? <Check size={18} /> : <Share2 size={18} />} {shareStatus === 'copied' ? "Copied" : "Share Achievement"}</button></div>)}
               </div>
            </GlassCard>
         </div>
