@@ -120,7 +120,8 @@ export enum AppView {
   HEALTH = 'HEALTH',
   SCHEDULE = 'SCHEDULE',
   DUEL = 'DUEL',
-  WISDOM = 'WISDOM'
+  WISDOM = 'WISDOM',
+  ABOUT = 'ABOUT'
 }
 
 export type ThemeMode = 'cyber' | 'zen';

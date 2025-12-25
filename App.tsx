@@ -15,9 +15,10 @@ import { ChronoLock } from './components/ChronoLock';
 import { WisdomShrine } from './components/WisdomShrine';
 import { MeditationArena } from './components/MeditationArena';
 import { QuantumMap } from './components/QuantumMap';
+import { AboutUs } from './components/AboutUs';
 import { AppView, UserStats, ScheduleItem, ActiveSession, AuthUser, ActiveDuel } from './types';
 import { INITIAL_USER_STATS, getRandomMarvelRank } from './constants';
-import { LayoutDashboard, Sword, User as UserIcon, CalendarClock, LogOut, Loader2, Zap, Sun, Activity, Trophy } from 'lucide-react';
+import { LayoutDashboard, Sword, User as UserIcon, CalendarClock, LogOut, Loader2, Zap, Sun, Activity, Trophy, Info } from 'lucide-react';
 import { dataService } from './services/dataService';
 import { authService } from './services/authService';
 
@@ -284,6 +285,7 @@ export default function App() {
         {currentView === AppView.MAP && <QuantumMap />}
         {currentView === AppView.SCHEDULE && <TacticalSchedule schedule={schedule} onAdd={handleAddSchedule} onRemove={handleRemoveSchedule} />}
         {currentView === AppView.WISDOM && <WisdomShrine stats={userStats} onUpdateStats={handleStatsUpdate} showToast={showToast} />}
+        {currentView === AppView.ABOUT && <AboutUs onBack={() => setCurrentView(AppView.DASHBOARD)} />}
       </main>
 
       <nav className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] z-[100]">
@@ -299,7 +301,7 @@ export default function App() {
           {[
             { id: AppView.DASHBOARD, icon: LayoutDashboard },
             { id: AppView.BATTLE, icon: Sword },
-            { id: AppView.WISDOM, icon: Sun },
+            { id: AppView.ABOUT, icon: Info },
             { id: AppView.SCHEDULE, icon: CalendarClock },
             { id: AppView.PROFILE, icon: UserIcon },
           ].map((item) => (
